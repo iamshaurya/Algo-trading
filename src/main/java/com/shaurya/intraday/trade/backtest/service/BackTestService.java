@@ -29,12 +29,15 @@ import com.shaurya.intraday.model.Candle;
 import com.shaurya.intraday.model.MailAccount;
 import com.shaurya.intraday.model.StrategyModel;
 import com.shaurya.intraday.strategy.Strategy;
+import com.shaurya.intraday.strategy.impl.EMAandRSIStrategyImpl;
+import com.shaurya.intraday.strategy.impl.GannSquare9StrategyImpl;
 import com.shaurya.intraday.strategy.impl.HeikinAshiOHLStrategyImpl;
 import com.shaurya.intraday.strategy.impl.OpenHighLowStrategyImpl;
 import com.shaurya.intraday.strategy.impl.OpeningRangeBreakoutStrategyImpl;
 import com.shaurya.intraday.trade.service.StockScreener;
 import com.shaurya.intraday.trade.service.TradeService;
 import com.shaurya.intraday.util.MailSender;
+import com.shaurya.intraday.util.StringUtil;
 import com.zerodhatech.kiteconnect.kitehttp.exceptions.KiteException;
 
 /**
@@ -63,6 +66,7 @@ public class BackTestService {
 			try {
 				backtest(position, strategyType, s, quantity, duration);
 			} catch (Exception e) {
+				System.out.println("Some error occured : "+StringUtil.getStackTraceInStringFmt(e)+" for : "+s);
 			}
 		}
 		Calendar header = Calendar.getInstance();
@@ -90,7 +94,7 @@ public class BackTestService {
 				totalPnl += res.getPnl();
 			}
 			double winPer = ((double) totalSuccess / (totalSuccess + totalFailure) * 100);
-			double avgPnl = (double) (totalPnl / resultMap.size());
+			double avgPnl = (double) (totalPnl / (totalSuccess + totalFailure));
 			sb.append(constructMailBody(e.getKey(), e.getValue(), winPer, avgPnl, totalPnl));
 		}
 		sb.append("</table></body></html>");
@@ -151,6 +155,12 @@ public class BackTestService {
 		List<Candle> niftyClist = null;
 		List<Candle> cList = null;
 		switch (strategyType) {
+		case EMA_RSI:
+			niftyClist = new ArrayList<>();
+			cList = tradeService.getPrevDayCandles(token, IntervalType.MINUTE_15, fromDate, toDateInit,200);
+			strategy = new EMAandRSIStrategyImpl();
+			strategy.initializeSetup(cList);
+			break;
 		case OPEN_HIGH_LOW:
 			niftyClist = new ArrayList<>();
 			cList = tradeService.getPrevDayCandles(token, IntervalType.MINUTE_5, fromDate, toDateInit, 200);
@@ -169,6 +179,11 @@ public class BackTestService {
 			strategy = new OpeningRangeBreakoutStrategyImpl();
 			strategy.initializeSetup(cList);
 			break;
+		case GANN_SQUARE_9:
+			niftyClist = new ArrayList<>();
+			cList = tradeService.getPrevDayCandles(token, IntervalType.MINUTE_5, fromDate, toDateInit, 200);
+			strategy = new GannSquare9StrategyImpl();
+			strategy.initializeSetup(cList);
 		default:
 			break;
 		}
@@ -287,10 +302,10 @@ public class BackTestService {
 						openTrade = tradeCall;
 						switch (tradeCall.getPosition()) {
 						case LONG:
-							System.out.println("Long Entry : " + tradeCall.toString());
+							System.out.println("Long Entry at : "+cList.get(i).getTime()+" values : " + tradeCall.toString());
 							break;
 						case SHORT:
-							System.out.println("Short Entry : " + tradeCall.toString());
+							System.out.println("Short Entry : "+cList.get(i).getTime()+" values : " + tradeCall.toString());
 							break;
 						default:
 							break;

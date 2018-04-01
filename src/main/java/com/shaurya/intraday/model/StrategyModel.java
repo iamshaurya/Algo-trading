@@ -32,6 +32,7 @@ public class StrategyModel {
 	private double marginMultiplier;
 	private double tradeMargin;
 	private double marginPortion;
+	private boolean trailSl;
 
 	public StrategyModel() {
 
@@ -48,6 +49,7 @@ public class StrategyModel {
 		this.exitOrder = exitOrder;
 		this.setSl(this.atr);
 		this.setTp(this.sl);
+		this.trailSl = false;
 	}
 
 	public void setSl(double atr) {
@@ -57,8 +59,11 @@ public class StrategyModel {
 		this.sl = fa * 2;
 	}
 	
-	public void trailSl(int tsl){
-		this.sl = this.sl - tsl;
+	public void trailSl(double tsl){
+		int ai = (int) (tsl * 100);
+		double ad = Math.ceil((double) ai / 10);
+		double fa = (double) ad / 10;
+		this.sl = this.sl - fa;
 	}
 
 	public void setTp(double sl) {

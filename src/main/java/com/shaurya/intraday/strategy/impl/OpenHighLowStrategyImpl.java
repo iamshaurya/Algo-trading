@@ -71,7 +71,7 @@ public class OpenHighLowStrategyImpl implements OpenHighLowStrategy {
 	public StrategyModel processTrades(Candle candle, StrategyModel openTrade, boolean updateSetup) {
 		if (updateSetup) {
 			candleSet.add(candle);
-			Candle candle5min = form5MinCandle(candle);
+			Candle candle5min = form5MinCandle();
 			if (candle5min != null) {
 				updateSetup(candle5min);
 				return getTradeCall(candle5min, openTrade);
@@ -80,7 +80,7 @@ public class OpenHighLowStrategyImpl implements OpenHighLowStrategy {
 		return null;
 	}
 
-	private Candle form5MinCandle(Candle candle) {
+	private Candle form5MinCandle() {
 		Candle candle5min = null;
 		if (candleSet.size() == 5) {
 			int i = 0;
@@ -88,7 +88,7 @@ public class OpenHighLowStrategyImpl implements OpenHighLowStrategy {
 			while (cItr.hasNext()) {
 				Candle c = cItr.next();
 				if (i == 0) {
-					candle5min = new Candle(candle.getSecurity(), c.getTime(), c.getOpen(), c.getHigh(), c.getLow(),
+					candle5min = new Candle(c.getSecurity(), c.getTime(), c.getOpen(), c.getHigh(), c.getLow(),
 							c.getClose(), 0);
 				} else {
 					candle5min.setClose(c.getClose());

@@ -8,6 +8,7 @@ import static com.shaurya.intraday.util.HelperUtil.stopLossReached;
 import static com.shaurya.intraday.util.HelperUtil.takeProfitReached;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -21,6 +22,7 @@ import com.shaurya.intraday.enums.PositionType;
 import com.shaurya.intraday.indicator.ADX;
 import com.shaurya.intraday.indicator.ATR;
 import com.shaurya.intraday.indicator.EMA;
+import com.shaurya.intraday.indicator.GannSquare9;
 import com.shaurya.intraday.indicator.MACD;
 import com.shaurya.intraday.indicator.RSI;
 import com.shaurya.intraday.model.ADXModel;
@@ -28,6 +30,7 @@ import com.shaurya.intraday.model.ATRModel;
 import com.shaurya.intraday.model.Candle;
 import com.shaurya.intraday.model.HeikinAshiCandle;
 import com.shaurya.intraday.model.IndicatorValue;
+import com.shaurya.intraday.model.Level;
 import com.shaurya.intraday.model.MACDModel;
 import com.shaurya.intraday.model.RSIModel;
 import com.shaurya.intraday.model.StrategyModel;
@@ -51,6 +54,7 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 	private TreeMap<Date, IndicatorValue> ema21Map;
 	private TreeSet<Candle> candleSet;
 	private HeikinAshiCandle prevCandle;
+	private List<Level> levels;
 	private boolean dayTradeDone;
 
 	/*
@@ -76,16 +80,19 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 	public StrategyModel processTrades(Candle candle, StrategyModel openTrade, boolean updateSetup) {
 		if (updateSetup) {
 			candleSet.add(candle);
-			HeikinAshiCandle candle5min = form5MinCandle(candle);
+			HeikinAshiCandle candle5min = form5MinCandle();
 			if (candle5min != null) {
 				updateSetup(candle5min.getHaCandle());
+				if(levels == null || levels.isEmpty()){
+					levels = GannSquare9.getLevels(candle5min.getCandle().getClose());
+				}
 				return getTradeCall(candle5min, openTrade);
 			}
 		}
 		return null;
 	}
 
-	private HeikinAshiCandle form5MinCandle(Candle candle) {
+	private HeikinAshiCandle form5MinCandle() {
 		HeikinAshiCandle haCandle = null;
 		Candle candle15min = null;
 		if (candleSet.size() == 15) {
@@ -94,7 +101,7 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 			while (cItr.hasNext()) {
 				Candle c = cItr.next();
 				if (i == 0) {
-					candle15min = new Candle(candle.getSecurity(), c.getTime(), c.getOpen(), c.getHigh(), c.getLow(),
+					candle15min = new Candle(c.getSecurity(), c.getTime(), c.getOpen(), c.getHigh(), c.getLow(),
 							c.getClose(), 0);
 				} else {
 					candle15min.setClose(c.getClose());
@@ -149,6 +156,37 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 		return tradeCall;
 
 	}
+	
+	private boolean bullishBreakout(Candle candle) {
+		boolean breakout = false;
+		Level currPriceLevel = new Level(candle.getClose(), false);
+		List<Level> auxList = new ArrayList<>(levels);
+		auxList.add(currPriceLevel);
+		Collections.sort(auxList);
+		int index = auxList.indexOf(currPriceLevel);
+		if (index > 0 && index < (auxList.size()-1)) {
+			double supportVal = auxList.get(index - 1).getValue();
+			double resistanceVal = auxList.get(index + 1).getValue();
+			breakout = (resistanceVal - candle.getClose()) > (candle.getClose() - supportVal) ;
+		}
+		return breakout;
+	}
+	
+	private boolean bearishBreakout(Candle candle) {
+		boolean breakout = false;
+		Level currPriceLevel = new Level(candle.getClose(), false);
+		List<Level> auxList = new ArrayList<>(levels);
+		auxList.add(currPriceLevel);
+		Collections.sort(auxList);
+		int index = auxList.indexOf(currPriceLevel);
+		if (index > 0 && index < (auxList.size()-1)) {
+			double supportVal = auxList.get(index - 1).getValue();
+			double resistanceVal = auxList.get(index + 1).getValue();
+			breakout = (candle.getClose() - supportVal) > (resistanceVal - candle.getClose());
+		}
+		return breakout;
+	}
+	
 
 	private boolean maUptrendExit(Candle candle) {
 		Date currentTime = getNthLastKeyEntry(ema21Map, 1);
@@ -334,6 +372,7 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 		ema21Map = null;
 		dayTradeDone = false;
 		prevCandle = null;
+		levels = null;
 		/*candleSet.clear();
 		dayTradeDone = false;*/
 	}
@@ -353,6 +392,7 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 		ATR.updateATR(candle, atr);
 		ADX.updateADX(candle, adx);
 		MACD.updateMacdModel(this.macd, candle, newfastEma, newSlowEma, 9);
+		
 	}
 
 }

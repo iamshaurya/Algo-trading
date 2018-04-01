@@ -73,12 +73,12 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
 	public StrategyModel processTrades(Candle candle, StrategyModel openTrade, boolean updateSetup) {
 		if (updateSetup) {
 			candle5Set.add(candle);
-			Candle candle5min = form5MinCandle(candle);
+			Candle candle5min = form5MinCandle();
 			if (candle5min != null) {
 				updateSetup(candle5min);
 				if (first30minCandle == null) {
 					candle30Set.add(candle5min);
-					first30minCandle = form30MinCandle(candle5min);
+					first30minCandle = form30MinCandle();
 				}
 				if (first30minCandle != null) {
 					return getTradeCall(candle5min, openTrade);
@@ -88,7 +88,7 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
 		return null;
 	}
 
-	private Candle form30MinCandle(Candle candle) {
+	private Candle form30MinCandle() {
 		Candle candle30min = null;
 		if (candle30Set.size() == 6) {
 			int i = 0;
@@ -96,7 +96,7 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
 			while (cItr.hasNext()) {
 				Candle c = cItr.next();
 				if (i == 0) {
-					candle30min = new Candle(candle.getSecurity(), c.getTime(), c.getOpen(), c.getHigh(), c.getLow(),
+					candle30min = new Candle(c.getSecurity(), c.getTime(), c.getOpen(), c.getHigh(), c.getLow(),
 							c.getClose(), 0);
 				} else {
 					candle30min.setClose(c.getClose());
@@ -110,7 +110,7 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
 		return candle30min;
 	}
 
-	private Candle form5MinCandle(Candle candle) {
+	private Candle form5MinCandle() {
 		Candle candle5min = null;
 		if (candle5Set.size() == 5) {
 			int i = 0;
@@ -118,7 +118,7 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
 			while (cItr.hasNext()) {
 				Candle c = cItr.next();
 				if (i == 0) {
-					candle5min = new Candle(candle.getSecurity(), c.getTime(), c.getOpen(), c.getHigh(), c.getLow(),
+					candle5min = new Candle(c.getSecurity(), c.getTime(), c.getOpen(), c.getHigh(), c.getLow(),
 							c.getClose(), 0);
 				} else {
 					candle5min.setClose(c.getClose());

@@ -3,16 +3,16 @@
  */
 package com.shaurya.intraday.strategy.impl;
 
-import static com.shaurya.intraday.util.HelperUtil.getLastDayEndDate;
-import static com.shaurya.intraday.util.HelperUtil.getPrevDateInMinute;
+import static com.shaurya.intraday.util.HelperUtil.getNthLastKeyEntry;
+import static com.shaurya.intraday.util.HelperUtil.stopLossReached;
 import static com.shaurya.intraday.util.HelperUtil.takeProfitReached;
 
-import java.util.Calendar;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
-import com.shaurya.intraday.constant.Constants;
 import com.shaurya.intraday.enums.IndicatorType;
 import com.shaurya.intraday.enums.PositionType;
 import com.shaurya.intraday.indicator.ATR;
@@ -24,7 +24,6 @@ import com.shaurya.intraday.model.IndicatorValue;
 import com.shaurya.intraday.model.RSIModel;
 import com.shaurya.intraday.model.StrategyModel;
 import com.shaurya.intraday.strategy.EMAandRSIStrategy;
-import com.shaurya.intraday.util.MailSender;
 
 /**
  * @author Shaurya
@@ -36,6 +35,7 @@ public class EMAandRSIStrategyImpl implements EMAandRSIStrategy {
 	private TreeMap<Date, IndicatorValue> fastEmaMap;
 	private TreeMap<Date, IndicatorValue> slowEmaMap;
 	private RSIModel rsi;
+	private TreeSet<Candle> candle5Set;
 
 	/*
 	 * case 1) if no open trade, then proceed sub case 1) if prev 20EMA < prev
@@ -53,59 +53,106 @@ public class EMAandRSIStrategyImpl implements EMAandRSIStrategy {
 	@Override
 	public StrategyModel processTrades(Candle candle, StrategyModel openTrade, boolean updateSetup) {
 		if (updateSetup) {
-			updateSetup(candle);
-		}
-		Date prevTime = getPrevDateInMinute(candle.getTime());
-		Date currentTime = candle.getTime();
-		double rsiValue = rsi.getRsiMap().get(currentTime).getIndicatorValue();
-		double atrValue = atr.getAtrMap().get(currentTime).getIndicatorValue();
-		if (openTrade == null) {
-			if (bullishCrossover(prevTime, currentTime) && rsiValue > 40 && rsiValue < 75) {
-				return new StrategyModel(PositionType.LONG, atrValue, candle.getClose(), candle.getSecurity(), null, 0,
-						false);
-			}
-			if (bearishCrossover(prevTime, currentTime) && rsiValue > 25 && rsiValue < 60) {
-				return new StrategyModel(PositionType.SHORT, atrValue, candle.getClose(), candle.getSecurity(), null, 0,
-						false);
-			}
-		} else {
-			// always check for stop loss hit before exiting trade and update
-			// reason in db
-			if (takeProfitReached(candle, openTrade)) {
-				openTrade.setExitOrder(true);
-				return openTrade;
-			}
-			if (openTrade.getPosition() == PositionType.LONG
-					&& (bearishCrossover(prevTime, currentTime) || rsiValue > 75)) {
-				openTrade.setExitOrder(true);
-				return openTrade;
-			}
-			if (openTrade.getPosition() == PositionType.SHORT
-					&& (bullishCrossover(prevTime, currentTime) || rsiValue < 25)) {
-				openTrade.setExitOrder(true);
-				return openTrade;
+			candle5Set.add(candle);
+			Candle candle5min = form5MinCandle();
+			if (candle5min != null) {
+				updateSetup(candle5min);
+				return getTradeCall(candle5min, openTrade);
 			}
 		}
 		return null;
 	}
 
-	private boolean bearishCrossover(Date prevTime, Date currentTime) {
-		return fastEmaMap.get(prevTime).getIndicatorValue() > slowEmaMap.get(prevTime).getIndicatorValue()
-				&& fastEmaMap.get(currentTime).getIndicatorValue() < slowEmaMap.get(currentTime).getIndicatorValue();
+	private Candle form5MinCandle() {
+		Candle candle5min = null;
+		if (candle5Set.size() == 15) {
+			int i = 0;
+			Iterator<Candle> cItr = candle5Set.iterator();
+			while (cItr.hasNext()) {
+				Candle c = cItr.next();
+				if (i == 0) {
+					candle5min = new Candle(c.getSecurity(), c.getTime(), c.getOpen(), c.getHigh(), c.getLow(),
+							c.getClose(), 0);
+				} else {
+					candle5min.setClose(c.getClose());
+					candle5min.setHigh(Math.max(candle5min.getHigh(), c.getHigh()));
+					candle5min.setLow(Math.min(candle5min.getLow(), c.getLow()));
+				}
+				i++;
+			}
+			candle5Set.clear();
+		}
+		return candle5min;
 	}
 
-	private boolean bullishCrossover(Date prevTime, Date currentTime) {
-		return fastEmaMap.get(prevTime).getIndicatorValue() < slowEmaMap.get(prevTime).getIndicatorValue()
-				&& fastEmaMap.get(currentTime).getIndicatorValue() > slowEmaMap.get(currentTime).getIndicatorValue();
+	private StrategyModel getTradeCall(Candle candle, StrategyModel openTrade) {
+		StrategyModel tradeCall = null;
+		double rsiValue = rsi.getRsiMap().lastEntry().getValue().getIndicatorValue();
+		double atrValue = atr.getAtrMap().lastEntry().getValue().getIndicatorValue();
+		if (openTrade == null) {
+			if (bullishEntry(candle) && rsiValue < 75) {
+				tradeCall = new StrategyModel(PositionType.LONG, (0.0025 * candle.getClose()), candle.getClose(),
+						candle.getSecurity(), null, 0, false);
+			}
+			if (bearishEntry(candle) && rsiValue > 25) {
+				tradeCall = new StrategyModel(PositionType.SHORT, (0.0025 * candle.getClose()), candle.getClose(),
+						candle.getSecurity(), null, 0, false);
+			}
+		} else {
+			// always check for stop loss hit before exiting trade and update
+			// reason in db
+			if (takeProfitReached(candle, openTrade)) {
+				tradeCall = new StrategyModel(openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
+						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
+			}
+			if (stopLossReached(candle, openTrade)) {
+				tradeCall = new StrategyModel(openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
+						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
+			}
+			if (openTrade.getPosition() == PositionType.LONG && (bearishExit(candle))) {
+				tradeCall = new StrategyModel(openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
+						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
+			}
+			if (openTrade.getPosition() == PositionType.SHORT && (bullishExit(candle))) {
+				tradeCall = new StrategyModel(openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
+						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
+			}
+		}
+		return tradeCall;
+	}
+
+	private boolean bearishEntry(Candle candle) {
+		Date currentTime = getNthLastKeyEntry(fastEmaMap, 1);
+		return (fastEmaMap.get(currentTime).getIndicatorValue() < slowEmaMap.get(currentTime).getIndicatorValue())
+				&& (candle.getClose() < slowEmaMap.get(currentTime).getIndicatorValue());
+	}
+
+	private boolean bearishExit(Candle candle) {
+		Date currentTime = getNthLastKeyEntry(fastEmaMap, 1);
+		return (fastEmaMap.get(currentTime).getIndicatorValue() < slowEmaMap.get(currentTime).getIndicatorValue())
+				|| (candle.getClose() < slowEmaMap.get(currentTime).getIndicatorValue());
+	}
+
+	private boolean bullishEntry(Candle candle) {
+		Date currentTime = getNthLastKeyEntry(fastEmaMap, 1);
+		return (fastEmaMap.get(currentTime).getIndicatorValue() > slowEmaMap.get(currentTime).getIndicatorValue())
+				&& (candle.getClose() > fastEmaMap.get(currentTime).getIndicatorValue());
+	}
+
+	private boolean bullishExit(Candle candle) {
+		Date currentTime = getNthLastKeyEntry(fastEmaMap, 1);
+		return (fastEmaMap.get(currentTime).getIndicatorValue() > slowEmaMap.get(currentTime).getIndicatorValue())
+				|| (candle.getClose() > fastEmaMap.get(currentTime).getIndicatorValue());
 	}
 
 	@Override
 	public void initializeSetup(List<Candle> cList) {
+		candle5Set = new TreeSet<>();
 		atr = ATR.calculateATR(cList);
 		rsi = RSI.calculateRSI(cList);
 		fastEmaMap = EMA.calculateEMA(20, cList);
 		slowEmaMap = EMA.calculateEMA(50, cList);
-		
+
 		sendInitSetupDataMail();
 	}
 
@@ -116,7 +163,8 @@ public class EMAandRSIStrategyImpl implements EMAandRSIStrategy {
 		IndicatorValue slowEma = slowEmaMap.lastEntry().getValue();
 		String mailbody = "ATR : " + atrIv.toString() + "\n" + "RSI : " + rsiIv.toString() + "\n" + "fast ema : "
 				+ fastEma.toString() + "\n" + "slow ema : " + slowEma.toString();
-		//MailSender.sendMail(Constants.TO_MAIL, Constants.TO_NAME, Constants.EMA_RSI_STRATEGY_SETUP_DATA, mailbody);
+		// MailSender.sendMail(Constants.TO_MAIL, Constants.TO_NAME,
+		// Constants.EMA_RSI_STRATEGY_SETUP_DATA, mailbody);
 	}
 
 	@Override
@@ -131,10 +179,10 @@ public class EMAandRSIStrategyImpl implements EMAandRSIStrategy {
 
 	@Override
 	public void destroySetup() {
-		atr = null;
-		rsi = null;
-		fastEmaMap = null;
-		slowEmaMap = null;
+		/*
+		 * atr = null; rsi = null; fastEmaMap = null; slowEmaMap = null;
+		 */
+		candle5Set.clear();
 	}
 
 }

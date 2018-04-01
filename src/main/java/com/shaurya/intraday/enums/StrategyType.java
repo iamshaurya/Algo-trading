@@ -9,7 +9,7 @@ package com.shaurya.intraday.enums;
  */
 public enum StrategyType {
 	EMA_RSI(1), EMA_MACD_RSI(2), MACD_RSI(3), MACD_HISTOGRAM(4), OPEN_HIGH_LOW(5), HEIKIN_ASHI_OHL(
-			6), OPENING_RANGE_BREAKOUT(7);
+			6), OPENING_RANGE_BREAKOUT(7), GANN_SQUARE_9(8);
 	private int id;
 
 	private StrategyType(int id) {

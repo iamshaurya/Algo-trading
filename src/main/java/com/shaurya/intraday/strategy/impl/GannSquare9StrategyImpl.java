@@ -52,8 +52,6 @@ public class GannSquare9StrategyImpl implements GannSquare9Strategy {
 	private TreeSet<Candle> candle5Set;
 	private List<Level> levels;
 	private Date nextLevelsCalTime;
-	private boolean slotTradeDone;
-	private boolean isOpenTrade;
 	private Candle prevCandle;
 
 	@Override
@@ -94,14 +92,12 @@ public class GannSquare9StrategyImpl implements GannSquare9Strategy {
 	private StrategyModel getTradeCall(Candle candle, StrategyModel openTrade) {
 		StrategyModel tradeCall = null;
 		if (openTrade == null && levels != null) {
-			if (prevCandle != null && maUptrend(candle) && bullishBreakout(candle)) {
-				isOpenTrade = true;
-				tradeCall = new StrategyModel(PositionType.LONG, (0.0025 * (candle.getClose())), candle.getClose(),
+			if (bullishBreakout(candle)) {
+				tradeCall = new StrategyModel(PositionType.LONG, (0.0025 * candle.getClose()), candle.getClose(),
 						candle.getSecurity(), null, 0, false);
 			}
-			if (prevCandle != null && maDowntrend(candle) && bearishBreakout(candle)) {
-				isOpenTrade = true;
-				tradeCall = new StrategyModel(PositionType.SHORT, (0.0025 * (candle.getClose())), candle.getClose(),
+			if (bearishBreakout(candle)) {
+				tradeCall = new StrategyModel(PositionType.SHORT, (0.0025 * candle.getClose()), candle.getClose(),
 						candle.getSecurity(), null, 0, false);
 			}
 		} else if (openTrade != null) {
@@ -109,78 +105,78 @@ public class GannSquare9StrategyImpl implements GannSquare9Strategy {
 			// reason in db
 			if (takeTargetReached(candle, openTrade)) {
 				// openTrade.setTrailSl(true);
-				//openTrade.trailSl(0.9995 * getTrailingStoplossValue(candle, openTrade));
+				openTrade.trailSl(0.9995 * getTrailingStoplossValue(candle, openTrade));
 			}
 			if (stopLossReached(candle, openTrade)) {
 				// slotTradeDone = true;
 				resetAcheivedFlags();
-				isOpenTrade = false;
 				tradeCall = new StrategyModel(openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
 						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
 			}
 			
-			if (openTrade.getPosition() == PositionType.LONG && (!maUptrend(candle))) {
+			/*if (openTrade.getPosition() == PositionType.LONG && (!maUptrend(candle))) {
 				tradeCall = new StrategyModel(openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
 						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
 			}
 			if (openTrade.getPosition() == PositionType.SHORT && (!maDowntrend(candle))) {
 				tradeCall = new StrategyModel(openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
 						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
-			}
+			}*/
 
 		}
 		prevCandle = candle;
 		return tradeCall;
 	}
 	
-	private Level getSupportResistanceLevel(PositionType positionType){
+	private double getSupportResistanceLevel(PositionType positionType, Candle candle){
 		List<Level> auxList = new ArrayList<>(levels);
 		Level tradePriceLevel = new Level(prevCandle.getClose(), false);
 		auxList.add(tradePriceLevel);
 		Collections.sort(auxList);
 		int tradePriceIndex = auxList.indexOf(tradePriceLevel);
-		List<Level> resistanceLevels = auxList.subList(tradePriceIndex+1, auxList.size()-1);
-		Collections.sort(resistanceLevels);
-		List<Level> supportLevels = auxList.subList(0, tradePriceIndex-1);
-		Collections.sort(supportLevels);
-		Collections.reverse(supportLevels);
-		switch (positionType) {
-		case LONG:
-			return supportLevels.get(0);
-		case SHORT:
-			return resistanceLevels.get(0);
-		default:
-			break;
+		if(tradePriceIndex >0 && tradePriceIndex < auxList.size()){
+			List<Level> resistanceLevels = auxList.subList(tradePriceIndex+1, auxList.size());
+			Collections.sort(resistanceLevels);
+			List<Level> supportLevels = auxList.subList(0, tradePriceIndex);
+			Collections.sort(supportLevels);
+			Collections.reverse(supportLevels);
+			switch (positionType) {
+			case LONG:
+				return supportLevels.get(0).getValue();
+			case SHORT:
+				return resistanceLevels.get(0).getValue();
+			default:
+				break;
+			}
 		}
-		return null;
+		
+		return positionType == PositionType.LONG ? (0.995 * candle.getClose()) : (1.005 * candle.getClose());
 	}
 	
 	private boolean bullishBreakout(Candle candle) {
 		boolean breakout = false;
-		Level currPriceLevel = new Level(candle.getClose(), false);
+		Level prevPriceLevel = new Level(prevCandle.getClose(), false);
 		List<Level> auxList = new ArrayList<>(levels);
-		auxList.add(currPriceLevel);
+		auxList.add(prevPriceLevel);
 		Collections.sort(auxList);
-		int index = auxList.indexOf(currPriceLevel);
-		if (index > 0 && index < (auxList.size()-1)) {
-			double supportVal = auxList.get(index - 1).getValue();
+		int index = auxList.indexOf(prevPriceLevel);
+		if (index > 0 && index < (auxList.size() - 1)) {
 			double resistanceVal = auxList.get(index + 1).getValue();
-			breakout = (resistanceVal - candle.getClose()) > (candle.getClose() - supportVal) ;
+			breakout = prevCandle.getClose() <= resistanceVal && candle.getClose() > resistanceVal;
 		}
 		return breakout;
 	}
 	
 	private boolean bearishBreakout(Candle candle) {
 		boolean breakout = false;
-		Level currPriceLevel = new Level(candle.getClose(), false);
+		Level prevPriceLevel = new Level(prevCandle.getClose(), false);
 		List<Level> auxList = new ArrayList<>(levels);
-		auxList.add(currPriceLevel);
+		auxList.add(prevPriceLevel);
 		Collections.sort(auxList);
-		int index = auxList.indexOf(currPriceLevel);
-		if (index > 0 && index < (auxList.size()-1)) {
+		int index = auxList.indexOf(prevPriceLevel);
+		if (index > 0 && index < (auxList.size() - 1)) {
 			double supportVal = auxList.get(index - 1).getValue();
-			double resistanceVal = auxList.get(index + 1).getValue();
-			breakout = (candle.getClose() - supportVal) > (resistanceVal - candle.getClose());
+			breakout = prevCandle.getClose() >= supportVal && candle.getClose() < supportVal;
 		}
 		return breakout;
 	}
@@ -217,31 +213,33 @@ public class GannSquare9StrategyImpl implements GannSquare9Strategy {
 		auxList.add(tradePriceLevel);
 		Collections.sort(auxList);
 		int tradePriceIndex = auxList.indexOf(tradePriceLevel);
-		List<Level> resistanceLevels = auxList.subList(tradePriceIndex+1, auxList.size()-1);
-		Collections.sort(resistanceLevels);
-		List<Level> supportLevels = auxList.subList(0, tradePriceIndex-1);
-		Collections.sort(supportLevels);
-		Collections.reverse(supportLevels);
-		if (levels != null) {
-			switch (openTrade.getPosition()) {
-			case LONG:
-				for (Level l : resistanceLevels) {
-					if ((openTrade.getTradePrice() < l.getValue()) && !l.isAcheived()
-							&& (candle.getClose() > (0.9995 * l.getValue()))) {
-						targetLevelReached = true;
+		if(tradePriceIndex > 0 && tradePriceIndex < auxList.size()){
+			List<Level> resistanceLevels = auxList.subList(tradePriceIndex+1, auxList.size());
+			Collections.sort(resistanceLevels);
+			List<Level> supportLevels = auxList.subList(0, tradePriceIndex);
+			Collections.sort(supportLevels);
+			Collections.reverse(supportLevels);
+			if (levels != null) {
+				switch (openTrade.getPosition()) {
+				case LONG:
+					for (Level l : resistanceLevels) {
+						if ((openTrade.getTradePrice() < l.getValue()) && !l.isAcheived()
+								&& (candle.getClose() > (0.9995 * l.getValue()))) {
+							targetLevelReached = true;
+						}
 					}
-				}
-				break;
-			case SHORT:
-				for (Level l : supportLevels) {
-					if ((openTrade.getTradePrice() > l.getValue()) && !l.isAcheived()
-							&& (candle.getClose() < (1.0005 * l.getValue()))) {
-						targetLevelReached = true;
+					break;
+				case SHORT:
+					for (Level l : supportLevels) {
+						if ((openTrade.getTradePrice() > l.getValue()) && !l.isAcheived()
+								&& (candle.getClose() < (1.0005 * l.getValue()))) {
+							targetLevelReached = true;
+						}
 					}
+					break;
+				default:
+					break;
 				}
-				break;
-			default:
-				break;
 			}
 		}
 		return targetLevelReached;
@@ -249,22 +247,21 @@ public class GannSquare9StrategyImpl implements GannSquare9Strategy {
 	
 	private double getTrailingStoplossValue(Candle candle, StrategyModel openTrade){
 		double trailingSl = 0;
-		double prevLevel = 0;
+		double prevLevel = openTrade.getTradePrice();
 		List<Level> auxList = new ArrayList<>(levels);
 		Level tradePriceLevel = new Level(openTrade.getTradePrice(), false);
 		auxList.add(tradePriceLevel);
 		Collections.sort(auxList);
 		int tradePriceIndex = auxList.indexOf(tradePriceLevel);
-		List<Level> resistanceLevels = auxList.subList(tradePriceIndex+1, auxList.size()-1);
+		List<Level> resistanceLevels = auxList.subList(tradePriceIndex+1, auxList.size());
 		Collections.sort(resistanceLevels);
-		List<Level> supportLevels = auxList.subList(0, tradePriceIndex-1);
+		List<Level> supportLevels = auxList.subList(0, tradePriceIndex);
 		Collections.sort(supportLevels);
 		Collections.reverse(supportLevels);
 		if (levels != null) {
 			switch (openTrade.getPosition()) {
 			case LONG:
 				for (Level l : resistanceLevels) {
-					prevLevel = openTrade.getTradePrice();
 					int currentIndex = resistanceLevels.indexOf(l);
 					if ((openTrade.getTradePrice() < l.getValue()) && !l.isAcheived()
 							&& (candle.getClose() > (0.9995 * l.getValue())) && currentIndex > 0) {
@@ -276,7 +273,6 @@ public class GannSquare9StrategyImpl implements GannSquare9Strategy {
 				break;
 			case SHORT:
 				for (Level l : supportLevels) {
-					prevLevel = openTrade.getTradePrice();
 					int currentIndex = resistanceLevels.indexOf(l);
 					if ((openTrade.getTradePrice() > l.getValue()) && !l.isAcheived()
 							&& (candle.getClose() < (1.0005 * l.getValue())) && currentIndex > 0) {
@@ -332,7 +328,6 @@ public class GannSquare9StrategyImpl implements GannSquare9Strategy {
 		ema13Map = EMA.calculateEMA(13, cList);
 		macd = MACD.calculateMACD(ema12Map, ema26Map, 9);
 		sma90 = SMA.calculateSMA(90, cList);
-		//slotTradeDone = false;
 
 		sendInitSetupDataMail();
 	}
@@ -393,9 +388,7 @@ public class GannSquare9StrategyImpl implements GannSquare9Strategy {
 		sma90 = null;
 		levels = null;
 		nextLevelsCalTime = null;
-		slotTradeDone = false;
-		isOpenTrade = false;
-		//candle5Set.clear();
+		/*candle5Set.clear();*/
 		
 	}
 

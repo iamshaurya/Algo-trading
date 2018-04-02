@@ -48,6 +48,7 @@ import com.shaurya.intraday.model.StrategyModel;
 import com.shaurya.intraday.query.builder.TradeQueryBuilder;
 import com.shaurya.intraday.repo.JpaRepo;
 import com.shaurya.intraday.util.MailSender;
+import com.shaurya.intraday.util.StringUtil;
 import com.zerodhatech.kiteconnect.kitehttp.exceptions.KiteException;
 import com.zerodhatech.models.HistoricalData;
 
@@ -247,7 +248,7 @@ public class TradeServiceImpl implements TradeService {
 				cList.add(TradeBuilder.convertHistoricalDataToCandle(d, nameTokenMap.get(instrumentToken)));
 			}
 		} catch (KiteException | Exception e) {
-			System.out.println("Error fetching historical data :: " + e.getMessage());
+			System.out.println("Error fetching historical data :: " +StringUtil.getStackTraceInStringFmt(e));
 			MailSender.sendMail(Constants.TO_MAIL, Constants.TO_NAME, Constants.PREV_DAY_CANDLE,
 					"Error fetching historical data :: " + e.getMessage() + "\n for : "+instrumentToken+"\n from : "+from+"\n to : "+to, mailAccount);
 		}

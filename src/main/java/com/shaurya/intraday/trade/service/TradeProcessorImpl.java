@@ -46,6 +46,7 @@ import com.shaurya.intraday.strategy.impl.OpenHighLowStrategyImpl;
 import com.shaurya.intraday.strategy.impl.OpeningRangeBreakoutStrategyImpl;
 import com.shaurya.intraday.util.HelperUtil;
 import com.shaurya.intraday.util.MailSender;
+import com.shaurya.intraday.util.StringUtil;
 import com.zerodhatech.kiteconnect.kitehttp.exceptions.KiteException;
 
 /**
@@ -202,59 +203,67 @@ public class TradeProcessorImpl implements TradeProcessor {
 		metadatMap = new HashMap<>();
 		Map<StrategyModel, StrategyType> strategyTypeMap = tradeService.getTradeStrategy();
 		for (Entry<StrategyModel, StrategyType> e : strategyTypeMap.entrySet()) {
-			List<Candle> cList = null;
-			e.getKey().setTradeMargin(e.getKey().getMarginPortion());
-			switch (e.getValue()) {
-			case EMA_MACD_RSI:
-				cList = tradeService.getPrevDayCandles(e.getKey().getSecurityToken(), cal.getTime());
-				EMAMacdAndRSIStrategy emaMacdRsi = new EMAMacdAndRSIStrategyImpl();
-				emaMacdRsi.initializeSetup(cList);
-				strategyMap.put(e.getKey().getSecurity(), emaMacdRsi);
-				break;
-			case EMA_RSI:
-				cList = tradeService.getPrevDayCandles(e.getKey().getSecurityToken(), cal.getTime());
-				EMAandRSIStrategy emaRsi = new EMAandRSIStrategyImpl();
-				emaRsi.initializeSetup(cList);
-				strategyMap.put(e.getKey().getSecurity(), emaRsi);
-				break;
-			case MACD_RSI:
-				cList = tradeService.getPrevDayCandles(e.getKey().getSecurityToken(), cal.getTime());
-				ModifiedMacdAndRSIStrategy macdRsi = new ModifiedMacdAndRSIStrategyImpl();
-				macdRsi.initializeSetup(cList);
-				strategyMap.put(e.getKey().getSecurity(), macdRsi);
-				break;
-			case MACD_HISTOGRAM:
-				cList = tradeService.getPrevDayCandles(e.getKey().getSecurityToken(), IntervalType.MINUTE_5,
-						rollDayOfYearByN(cal.getTime(), -4), cal.getTime(), 200);
-				MacdHistogramStrategy macdHistogram = new MacdHistogramStrategyImpl();
-				macdHistogram.initializeSetup(cList);
-				strategyMap.put(e.getKey().getSecurity(), macdHistogram);
-				break;
-			case OPEN_HIGH_LOW:
-				cList = tradeService.getPrevDayCandles(e.getKey().getSecurityToken(), IntervalType.MINUTE_5,
-						rollDayOfYearByN(cal.getTime(), -4), cal.getTime(), 200);
-				OpenHighLowStrategy ohl = new OpenHighLowStrategyImpl();
-				ohl.initializeSetup(cList);
-				strategyMap.put(e.getKey().getSecurity(), ohl);
-				break;
-			case HEIKIN_ASHI_OHL:
-				cList = tradeService.getPrevDayCandles(e.getKey().getSecurityToken(), IntervalType.MINUTE_15,
-						rollDayOfYearByN(cal.getTime(), -6), cal.getTime(), 100);
-				HeikinAshiOHLStrategy haOhl = new HeikinAshiOHLStrategyImpl();
-				haOhl.initializeSetup(cList);
-				strategyMap.put(e.getKey().getSecurity(), haOhl);
-				break;
-			case OPENING_RANGE_BREAKOUT:
-				cList = tradeService.getPrevDayCandles(e.getKey().getSecurityToken(), IntervalType.MINUTE_5,
-						rollDayOfYearByN(cal.getTime(), -4), cal.getTime(), 200);
-				OpeningRangeBreakoutStrategy orb = new OpeningRangeBreakoutStrategyImpl();
-				orb.initializeSetup(cList);
-				strategyMap.put(e.getKey().getSecurity(), orb);
-				break;
-			default:
-				break;
+			try{
+
+				List<Candle> cList = null;
+				e.getKey().setTradeMargin(e.getKey().getMarginPortion());
+				switch (e.getValue()) {
+				case EMA_MACD_RSI:
+					cList = tradeService.getPrevDayCandles(e.getKey().getSecurityToken(), cal.getTime());
+					EMAMacdAndRSIStrategy emaMacdRsi = new EMAMacdAndRSIStrategyImpl();
+					emaMacdRsi.initializeSetup(cList);
+					strategyMap.put(e.getKey().getSecurity(), emaMacdRsi);
+					break;
+				case EMA_RSI:
+					cList = tradeService.getPrevDayCandles(e.getKey().getSecurityToken(), cal.getTime());
+					EMAandRSIStrategy emaRsi = new EMAandRSIStrategyImpl();
+					emaRsi.initializeSetup(cList);
+					strategyMap.put(e.getKey().getSecurity(), emaRsi);
+					break;
+				case MACD_RSI:
+					cList = tradeService.getPrevDayCandles(e.getKey().getSecurityToken(), cal.getTime());
+					ModifiedMacdAndRSIStrategy macdRsi = new ModifiedMacdAndRSIStrategyImpl();
+					macdRsi.initializeSetup(cList);
+					strategyMap.put(e.getKey().getSecurity(), macdRsi);
+					break;
+				case MACD_HISTOGRAM:
+					cList = tradeService.getPrevDayCandles(e.getKey().getSecurityToken(), IntervalType.MINUTE_5,
+							rollDayOfYearByN(cal.getTime(), -4), cal.getTime(), 200);
+					MacdHistogramStrategy macdHistogram = new MacdHistogramStrategyImpl();
+					macdHistogram.initializeSetup(cList);
+					strategyMap.put(e.getKey().getSecurity(), macdHistogram);
+					break;
+				case OPEN_HIGH_LOW:
+					cList = tradeService.getPrevDayCandles(e.getKey().getSecurityToken(), IntervalType.MINUTE_5,
+							rollDayOfYearByN(cal.getTime(), -4), cal.getTime(), 200);
+					OpenHighLowStrategy ohl = new OpenHighLowStrategyImpl();
+					ohl.initializeSetup(cList);
+					strategyMap.put(e.getKey().getSecurity(), ohl);
+					break;
+				case HEIKIN_ASHI_OHL:
+					cList = tradeService.getPrevDayCandles(e.getKey().getSecurityToken(), IntervalType.MINUTE_15,
+							rollDayOfYearByN(cal.getTime(), -6), cal.getTime(), 100);
+					HeikinAshiOHLStrategy haOhl = new HeikinAshiOHLStrategyImpl();
+					haOhl.initializeSetup(cList);
+					strategyMap.put(e.getKey().getSecurity(), haOhl);
+					break;
+				case OPENING_RANGE_BREAKOUT:
+					cList = tradeService.getPrevDayCandles(e.getKey().getSecurityToken(), IntervalType.MINUTE_5,
+							rollDayOfYearByN(cal.getTime(), -4), cal.getTime(), 200);
+					OpeningRangeBreakoutStrategy orb = new OpeningRangeBreakoutStrategyImpl();
+					orb.initializeSetup(cList);
+					strategyMap.put(e.getKey().getSecurity(), orb);
+					break;
+				default:
+					break;
+				}
+				metadatMap.put(e.getKey().getSecurity(), e.getKey());
+			
+			}catch(Exception ex){
+				System.out.println("Error initializing historical data :: " +StringUtil.getStackTraceInStringFmt(ex));
+				MailSender.sendMail(Constants.TO_MAIL, Constants.TO_NAME, Constants.KITE_EXCEPTION_TRADE_PROCESSOR,
+						"Error initialiing historical data :: " + ex.getMessage() + "\n for : "+e.getKey().getSecurity(), mailAccount);
 			}
-			metadatMap.put(e.getKey().getSecurity(), e.getKey());
 		}
 		// tradeService.deletePrevDayCandlesAndStrategy();
 		initializeNifty50Candle();

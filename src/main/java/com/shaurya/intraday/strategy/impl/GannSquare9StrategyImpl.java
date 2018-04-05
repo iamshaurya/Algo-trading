@@ -3,8 +3,8 @@
  */
 package com.shaurya.intraday.strategy.impl;
 
-import static com.shaurya.intraday.util.HelperUtil.getNthLastKeyEntry;
 import static com.shaurya.intraday.util.HelperUtil.stopLossReached;
+import static com.shaurya.intraday.util.HelperUtil.takeProfitReached;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -12,27 +12,17 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 import java.util.TreeSet;
 
-import com.shaurya.intraday.enums.IndicatorType;
+import com.shaurya.intraday.enums.CandlestickPatternsType;
 import com.shaurya.intraday.enums.PositionType;
-import com.shaurya.intraday.indicator.ATR;
-import com.shaurya.intraday.indicator.EMA;
 import com.shaurya.intraday.indicator.GannSquare9;
-import com.shaurya.intraday.indicator.MACD;
-import com.shaurya.intraday.indicator.RSI;
-import com.shaurya.intraday.indicator.SMA;
-import com.shaurya.intraday.model.ATRModel;
+import com.shaurya.intraday.indicator.PivotPoints;
 import com.shaurya.intraday.model.Candle;
-import com.shaurya.intraday.model.IndicatorValue;
 import com.shaurya.intraday.model.Level;
-import com.shaurya.intraday.model.MACDModel;
-import com.shaurya.intraday.model.RSIModel;
-import com.shaurya.intraday.model.SMAModel;
 import com.shaurya.intraday.model.StrategyModel;
 import com.shaurya.intraday.strategy.GannSquare9Strategy;
+import com.shaurya.intraday.util.CandlestickPatternHelper;
 
 /**
  * @author Shaurya
@@ -40,104 +30,203 @@ import com.shaurya.intraday.strategy.GannSquare9Strategy;
  */
 public class GannSquare9StrategyImpl implements GannSquare9Strategy {
 	// Taking 9-EMA and 21-EMA
-	private ATRModel atr;
-	private TreeMap<Date, IndicatorValue> ema5Map;
-	private TreeMap<Date, IndicatorValue> ema8Map;
-	private TreeMap<Date, IndicatorValue> ema12Map;
-	private TreeMap<Date, IndicatorValue> ema26Map;
-	private TreeMap<Date, IndicatorValue> ema13Map;
-	private SMAModel sma90;
-	private RSIModel rsi;
-	private MACDModel macd;
-	private TreeSet<Candle> candle5Set;
+	private TreeSet<Candle> candle15Set;
+	private TreeSet<Candle> prevDayCandleSet;
 	private List<Level> levels;
 	private Date nextLevelsCalTime;
 	private Candle prevCandle;
+	private Candle prevDayCandle;
 
 	@Override
 	public StrategyModel processTrades(Candle candle, StrategyModel openTrade, boolean updateSetup) {
 		if (updateSetup) {
-			candle5Set.add(candle);
-			Candle candle5min = form5MinCandle();
-			if (candle5min != null) {
-				updateSetup(candle5min);
-				return getTradeCall(candle, openTrade);
+			candle15Set.add(candle);
+			Candle candle15min = form15MinCandle();
+			if (candle15min != null) {
+				prevDayCandleSet.add(candle15min);
+				formPrevDayCandle();
+				updateSetup(candle15min);
+				return getTradeCall(candle15min, openTrade);
 			}
 		}
 		return null;
 	}
 
-	private Candle form5MinCandle() {
-		Candle candle5min = null;
-		if (candle5Set.size() == 15) {
+	private Candle form15MinCandle() {
+		Candle candle15min = null;
+		if (candle15Set.size() == 15) {
 			int i = 0;
-			Iterator<Candle> cItr = candle5Set.iterator();
+			Iterator<Candle> cItr = candle15Set.iterator();
 			while (cItr.hasNext()) {
 				Candle c = cItr.next();
 				if (i == 0) {
-					candle5min = new Candle(c.getSecurity(), c.getTime(), c.getOpen(), c.getHigh(), c.getLow(),
-							c.getClose(), 0);
+					candle15min = new Candle(c.getSecurity(), c.getTime(), c.getOpen(), c.getHigh(), c.getLow(),
+							c.getClose(), c.getVolume());
 				} else {
-					candle5min.setClose(c.getClose());
-					candle5min.setHigh(Math.max(candle5min.getHigh(), c.getHigh()));
-					candle5min.setLow(Math.min(candle5min.getLow(), c.getLow()));
+					candle15min.setClose(c.getClose());
+					candle15min.setHigh(Math.max(candle15min.getHigh(), c.getHigh()));
+					candle15min.setLow(Math.min(candle15min.getLow(), c.getLow()));
+					candle15min.setVolume(candle15min.getVolume() + c.getVolume());
 				}
 				i++;
 			}
-			candle5Set.clear();
+			candle15Set.clear();
 		}
-		return candle5min;
+		return candle15min;
+	}
+
+	private void formPrevDayCandle() {
+		if (prevDayCandleSet.size() == 15) {
+			int i = 0;
+			Iterator<Candle> cItr = prevDayCandleSet.iterator();
+			while (cItr.hasNext()) {
+				Candle c = cItr.next();
+				if (i == 0) {
+					prevDayCandle = new Candle(c.getSecurity(), c.getTime(), c.getOpen(), c.getHigh(), c.getLow(),
+							c.getClose(), c.getVolume());
+				} else {
+					prevDayCandle.setClose(c.getClose());
+					prevDayCandle.setHigh(Math.max(prevDayCandle.getHigh(), c.getHigh()));
+					prevDayCandle.setLow(Math.min(prevDayCandle.getLow(), c.getLow()));
+					prevDayCandle.setVolume(prevDayCandle.getVolume() + c.getVolume());
+				}
+				i++;
+			}
+			prevDayCandleSet.clear();
+		}
 	}
 
 	private StrategyModel getTradeCall(Candle candle, StrategyModel openTrade) {
 		StrategyModel tradeCall = null;
 		if (openTrade == null && levels != null) {
-			if (bullishBreakout(candle)) {
-				tradeCall = new StrategyModel(PositionType.LONG, (0.0025 * candle.getClose()), candle.getClose(),
+			if (reversalNearSupport(candle) || bullishBreakout(candle)) {
+				tradeCall = new StrategyModel(PositionType.LONG, (0.0015 * candle.getClose()), candle.getClose(),
 						candle.getSecurity(), null, 0, false);
 			}
-			if (bearishBreakout(candle)) {
-				tradeCall = new StrategyModel(PositionType.SHORT, (0.0025 * candle.getClose()), candle.getClose(),
+			if (reversalNearResistance(candle) || bearishBreakout(candle)) {
+				tradeCall = new StrategyModel(PositionType.SHORT, (0.0015 * candle.getClose()), candle.getClose(),
 						candle.getSecurity(), null, 0, false);
 			}
 		} else if (openTrade != null) {
 			// always check for stop loss hit before exiting trade and update
 			// reason in db
-			if (takeTargetReached(candle, openTrade)) {
-				// openTrade.setTrailSl(true);
-				openTrade.trailSl(0.9995 * getTrailingStoplossValue(candle, openTrade));
+			if (takeProfitReached(candle, openTrade)) {
+				tradeCall = new StrategyModel(openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
+						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
 			}
 			if (stopLossReached(candle, openTrade)) {
-				// slotTradeDone = true;
-				resetAcheivedFlags();
-				tradeCall = new StrategyModel(openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
-						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
-			}
-			
-			/*if (openTrade.getPosition() == PositionType.LONG && (!maUptrend(candle))) {
-				tradeCall = new StrategyModel(openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
-						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
-			}
-			if (openTrade.getPosition() == PositionType.SHORT && (!maDowntrend(candle))) {
-				tradeCall = new StrategyModel(openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
-						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
-			}*/
+				resetAchievedFlag();
+				tradeCall = new StrategyModel(openTrade.getPosition(), (double) (openTrade.getSl() / 2),
+						candle.getClose(), openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(),
+						true);
 
+			}
 		}
 		prevCandle = candle;
 		return tradeCall;
 	}
-	
-	private double getSupportResistanceLevel(PositionType positionType, Candle candle){
+
+	private boolean reversalNearResistance(Candle candle) {
+		boolean reversal = false;
+		double resistance = getSupportResistanceLevel(PositionType.SHORT, candle);
+		for (CandlestickPatternsType pattern : CandlestickPatternsType.values()) {
+			switch (pattern) {
+			case MARUBOZU:
+				if (CandlestickPatternHelper.bearishMarubozu(candle)) {
+					reversal = true;
+				}
+				break;
+			case DOJI_REVERSAL:
+				if (CandlestickPatternHelper.dojiBearishReversal(prevCandle, candle)
+						&& ((prevCandle.getClose() < (1.003 * resistance))
+								&& (candle.getClose() < (0.999 * resistance)))) {
+					reversal = true;
+				}
+				break;
+			case ENGULFING:
+				if (CandlestickPatternHelper.bearishEngulfing(prevCandle, candle)
+						&& ((prevCandle.getOpen() < resistance) && (candle.getClose() < (0.999 * resistance)))) {
+					reversal = true;
+				}
+				break;
+			case HARAMI:
+				if (CandlestickPatternHelper.bearishHarami(prevCandle, candle)
+						&& (candle.getClose() < (0.999 * resistance))) {
+					reversal = true;
+				}
+				break;
+			case PEIRCING:
+				if (CandlestickPatternHelper.bearishPiercing(prevCandle, candle)
+						&& (candle.getClose() < (0.999 * resistance))) {
+					reversal = true;
+				}
+				break;
+
+			default:
+				break;
+			}
+		}
+		return reversal;
+	}
+
+	private boolean reversalNearSupport(Candle candle) {
+		boolean reversal = false;
+		double support = getSupportResistanceLevel(PositionType.LONG, candle);
+		for (CandlestickPatternsType pattern : CandlestickPatternsType.values()) {
+			switch (pattern) {
+			case MARUBOZU:
+				if (CandlestickPatternHelper.bullishMarubozu(candle)) {
+					reversal = true;
+				}
+				break;
+			case DOJI_REVERSAL:
+				if (CandlestickPatternHelper.dojiBullishReversal(prevCandle, candle)
+						&& ((prevCandle.getClose() > (0.997 * support)) && (candle.getClose() > (1.001 * support)))) {
+					reversal = true;
+				}
+				break;
+			case ENGULFING:
+				if (CandlestickPatternHelper.bullishEngulfing(prevCandle, candle)
+						&& ((prevCandle.getOpen() > support) && (candle.getClose() > (1.001 * support)))) {
+					reversal = true;
+				}
+				break;
+			case HARAMI:
+				if (CandlestickPatternHelper.bullishHarami(prevCandle, candle)
+						&& (candle.getClose() > (1.001 * support))) {
+					reversal = true;
+				}
+				break;
+			case PEIRCING:
+				if (CandlestickPatternHelper.bullishPiercing(prevCandle, candle)
+						&& (candle.getClose() > (1.001 * support))) {
+					reversal = true;
+				}
+				break;
+
+			default:
+				break;
+			}
+		}
+		return reversal;
+	}
+
+	private void resetAchievedFlag() {
+		for (Level l : levels) {
+			l.setAcheived(false);
+		}
+	}
+
+	private double getSupportResistanceLevel(PositionType positionType, Candle candle) {
 		List<Level> auxList = new ArrayList<>(levels);
-		Level tradePriceLevel = new Level(prevCandle.getClose(), false);
-		auxList.add(tradePriceLevel);
+		Level ltpLevel = new Level(candle.getClose(), false);
+		auxList.add(ltpLevel);
 		Collections.sort(auxList);
-		int tradePriceIndex = auxList.indexOf(tradePriceLevel);
-		if(tradePriceIndex >0 && tradePriceIndex < auxList.size()){
-			List<Level> resistanceLevels = auxList.subList(tradePriceIndex+1, auxList.size());
+		int ltpIndex = auxList.indexOf(ltpLevel);
+		if (ltpIndex > 0 && ltpIndex < (auxList.size() - 1)) {
+			List<Level> resistanceLevels = auxList.subList(ltpIndex + 1, auxList.size());
 			Collections.sort(resistanceLevels);
-			List<Level> supportLevels = auxList.subList(0, tradePriceIndex);
+			List<Level> supportLevels = auxList.subList(0, ltpIndex);
 			Collections.sort(supportLevels);
 			Collections.reverse(supportLevels);
 			switch (positionType) {
@@ -149,12 +238,13 @@ public class GannSquare9StrategyImpl implements GannSquare9Strategy {
 				break;
 			}
 		}
-		
+
 		return positionType == PositionType.LONG ? (0.995 * candle.getClose()) : (1.005 * candle.getClose());
 	}
-	
+
 	private boolean bullishBreakout(Candle candle) {
 		boolean breakout = false;
+		boolean greenCandle = false;
 		Level prevPriceLevel = new Level(prevCandle.getClose(), false);
 		List<Level> auxList = new ArrayList<>(levels);
 		auxList.add(prevPriceLevel);
@@ -162,13 +252,15 @@ public class GannSquare9StrategyImpl implements GannSquare9Strategy {
 		int index = auxList.indexOf(prevPriceLevel);
 		if (index > 0 && index < (auxList.size() - 1)) {
 			double resistanceVal = auxList.get(index + 1).getValue();
-			breakout = prevCandle.getClose() <= resistanceVal && candle.getClose() > resistanceVal;
+			breakout = prevCandle.getClose() <= resistanceVal && candle.getClose() > (1.001 * resistanceVal);
+			greenCandle = candle.getClose() > candle.getOpen();
 		}
-		return breakout;
+		return breakout && greenCandle;
 	}
-	
+
 	private boolean bearishBreakout(Candle candle) {
 		boolean breakout = false;
+		boolean redCandle = false;
 		Level prevPriceLevel = new Level(prevCandle.getClose(), false);
 		List<Level> auxList = new ArrayList<>(levels);
 		auxList.add(prevPriceLevel);
@@ -176,188 +268,42 @@ public class GannSquare9StrategyImpl implements GannSquare9Strategy {
 		int index = auxList.indexOf(prevPriceLevel);
 		if (index > 0 && index < (auxList.size() - 1)) {
 			double supportVal = auxList.get(index - 1).getValue();
-			breakout = prevCandle.getClose() >= supportVal && candle.getClose() < supportVal;
+			breakout = prevCandle.getClose() >= supportVal && candle.getClose() < (0.999 * supportVal);
+			redCandle = candle.getClose() < candle.getOpen();
 		}
-		return breakout;
-	}
-	
-	private void resetAcheivedFlags() {
-		for(Level l: levels){
-			l.setAcheived(false);
-		}
-		
-	}
-	
-	private boolean maUptrendExit(Candle candle) {
-		Date currentTime = getNthLastKeyEntry(ema8Map, 1);
-		return (candle.getClose() < ema8Map.get(currentTime).getIndicatorValue())
-				|| (ema5Map.get(currentTime).getIndicatorValue() < ema8Map.get(currentTime).getIndicatorValue());
-	}
-
-	private boolean maDowntrendExit(Candle candle) {
-		Date currentTime = getNthLastKeyEntry(ema8Map, 1);
-		return (candle.getClose() > ema8Map.get(currentTime).getIndicatorValue())
-				|| (ema5Map.get(currentTime).getIndicatorValue() > ema8Map.get(currentTime).getIndicatorValue());
-	}
-	
-	private boolean isTradableRange(Candle candle) {
-		double stockPrice = candle.getClose();
-		double range = atr.getAtrMap().lastEntry().getValue().getIndicatorValue();
-		return (range >= (0.004 * stockPrice)) && (range <= (0.02 * stockPrice));
-	}
-
-	private boolean takeTargetReached(Candle candle, StrategyModel openTrade) {
-		boolean targetLevelReached = false;
-		List<Level> auxList = new ArrayList<>(levels);
-		Level tradePriceLevel = new Level(openTrade.getTradePrice(), false);
-		auxList.add(tradePriceLevel);
-		Collections.sort(auxList);
-		int tradePriceIndex = auxList.indexOf(tradePriceLevel);
-		if(tradePriceIndex > 0 && tradePriceIndex < auxList.size()){
-			List<Level> resistanceLevels = auxList.subList(tradePriceIndex+1, auxList.size());
-			Collections.sort(resistanceLevels);
-			List<Level> supportLevels = auxList.subList(0, tradePriceIndex);
-			Collections.sort(supportLevels);
-			Collections.reverse(supportLevels);
-			if (levels != null) {
-				switch (openTrade.getPosition()) {
-				case LONG:
-					for (Level l : resistanceLevels) {
-						if ((openTrade.getTradePrice() < l.getValue()) && !l.isAcheived()
-								&& (candle.getClose() > (0.9995 * l.getValue()))) {
-							targetLevelReached = true;
-						}
-					}
-					break;
-				case SHORT:
-					for (Level l : supportLevels) {
-						if ((openTrade.getTradePrice() > l.getValue()) && !l.isAcheived()
-								&& (candle.getClose() < (1.0005 * l.getValue()))) {
-							targetLevelReached = true;
-						}
-					}
-					break;
-				default:
-					break;
-				}
-			}
-		}
-		return targetLevelReached;
-	}
-	
-	private double getTrailingStoplossValue(Candle candle, StrategyModel openTrade){
-		double trailingSl = 0;
-		double prevLevel = openTrade.getTradePrice();
-		List<Level> auxList = new ArrayList<>(levels);
-		Level tradePriceLevel = new Level(openTrade.getTradePrice(), false);
-		auxList.add(tradePriceLevel);
-		Collections.sort(auxList);
-		int tradePriceIndex = auxList.indexOf(tradePriceLevel);
-		List<Level> resistanceLevels = auxList.subList(tradePriceIndex+1, auxList.size());
-		Collections.sort(resistanceLevels);
-		List<Level> supportLevels = auxList.subList(0, tradePriceIndex);
-		Collections.sort(supportLevels);
-		Collections.reverse(supportLevels);
-		if (levels != null) {
-			switch (openTrade.getPosition()) {
-			case LONG:
-				for (Level l : resistanceLevels) {
-					int currentIndex = resistanceLevels.indexOf(l);
-					if ((openTrade.getTradePrice() < l.getValue()) && !l.isAcheived()
-							&& (candle.getClose() > (0.9995 * l.getValue())) && currentIndex > 0) {
-						l.setAcheived(true);
-						prevLevel = resistanceLevels.get(currentIndex - 1).getValue();
-					}
-				}
-				trailingSl = prevLevel - (openTrade.getTradePrice() - openTrade.getSl());
-				break;
-			case SHORT:
-				for (Level l : supportLevels) {
-					int currentIndex = resistanceLevels.indexOf(l);
-					if ((openTrade.getTradePrice() > l.getValue()) && !l.isAcheived()
-							&& (candle.getClose() < (1.0005 * l.getValue())) && currentIndex > 0) {
-						l.setAcheived(true);
-						prevLevel = supportLevels.get(currentIndex-1).getValue();
-					}
-				}
-				trailingSl =  (openTrade.getTradePrice() + openTrade.getSl()) - prevLevel;
-				break;
-			default:
-				break;
-			}
-		}
-		return trailingSl;
-	
-	}
-
-	private boolean maUptrend(Candle candle) {
-		Date currentTime = getNthLastKeyEntry(ema8Map, 1);
-		return (ema13Map.get(currentTime).getIndicatorValue() < ema8Map.get(currentTime).getIndicatorValue())
-				&& (ema8Map.get(currentTime).getIndicatorValue() < ema5Map.get(currentTime).getIndicatorValue());
-	}
-
-	private boolean maDowntrend(Candle candle) {
-		Date currentTime = getNthLastKeyEntry(ema8Map, 1);
-		return (ema13Map.get(currentTime).getIndicatorValue() > ema8Map.get(currentTime).getIndicatorValue())
-				&& (ema8Map.get(currentTime).getIndicatorValue() > ema5Map.get(currentTime).getIndicatorValue());
-	}
-	
-	private boolean entryBullishMacd() {
-		Date currentTime = getNthLastKeyEntry(macd.getMacdMap(), 1);
-		Map<Date, IndicatorValue> macdMap = macd.getMacdMap();
-		Map<Date, IndicatorValue> signalMap = macd.getSignalMap();
-		return (macdMap.get(currentTime).getIndicatorValue() > signalMap.get(currentTime).getIndicatorValue());
-	}
-	
-	private boolean entryBearishMacd() {
-		Date currentTime = getNthLastKeyEntry(macd.getMacdMap(), 1);
-		Map<Date, IndicatorValue> macdMap = macd.getMacdMap();
-		Map<Date, IndicatorValue> signalMap = macd.getSignalMap();
-		return (macdMap.get(currentTime).getIndicatorValue() < signalMap.get(currentTime).getIndicatorValue());
+		return breakout && redCandle;
 	}
 
 	@Override
 	public void initializeSetup(List<Candle> cList) {
-		candle5Set = new TreeSet<>();
-		atr = ATR.calculateATR(cList);
-		rsi = RSI.calculateRSI(cList);
-		ema5Map = EMA.calculateEMA(5, cList);
-		ema8Map = EMA.calculateEMA(8, cList);
-		ema12Map = EMA.calculateEMA(12, cList);
-		ema26Map = EMA.calculateEMA(26, cList);
-		ema13Map = EMA.calculateEMA(13, cList);
-		macd = MACD.calculateMACD(ema12Map, ema26Map, 9);
-		sma90 = SMA.calculateSMA(90, cList);
+		candle15Set = new TreeSet<>();
+		prevDayCandleSet = new TreeSet<>();
+		// TODO:
+		List<Candle> lastDayCandles = cList.subList(cList.size() - 25, cList.size());
+		Collections.sort(lastDayCandles);
+		for (int i = 0; i < lastDayCandles.size(); i++) {
+			Candle c = lastDayCandles.get(i);
+			if (i == 0) {
+				prevDayCandle = new Candle(c.getSecurity(), c.getTime(), c.getOpen(), c.getHigh(), c.getLow(),
+						c.getClose(), c.getVolume());
+			} else {
+				prevDayCandle.setClose(c.getClose());
+				prevDayCandle.setHigh(Math.max(prevDayCandle.getHigh(), c.getHigh()));
+				prevDayCandle.setLow(Math.min(prevDayCandle.getLow(), c.getLow()));
+				prevDayCandle.setVolume(prevDayCandle.getVolume() + c.getVolume());
+			}
+		}
 
 		sendInitSetupDataMail();
 	}
 
 	private void sendInitSetupDataMail() {
-		IndicatorValue atrIv = atr.getAtrMap().lastEntry().getValue();
-		IndicatorValue rsiIv = rsi.getRsiMap().lastEntry().getValue();
-		IndicatorValue fastEma = ema5Map.lastEntry().getValue();
-		IndicatorValue slowEma = ema8Map.lastEntry().getValue();
-		String mailbody = "ATR : " + atrIv.toString() + "\n" + "RSI : " + rsiIv.toString() + "\n" + "fast ema : "
-				+ fastEma.toString() + "\n" + "slow ema : " + slowEma.toString();
+		String mailbody = "Prev day candle : " + prevDayCandle.toString();
 		System.out.println(mailbody);
 	}
 
 	@Override
 	public void updateSetup(Candle candle) {
-		double new5Ema = EMA.calculateEMA(5, candle, ema5Map.lastEntry().getValue().getIndicatorValue());
-		double new8Ema = EMA.calculateEMA(8, candle, ema8Map.lastEntry().getValue().getIndicatorValue());
-		double newfast12Ema = EMA.calculateEMA(12, candle, ema12Map.lastEntry().getValue().getIndicatorValue());
-		double newSlow26Ema = EMA.calculateEMA(26, candle, ema26Map.lastEntry().getValue().getIndicatorValue());
-		double new13Ema = EMA.calculateEMA(13, candle, ema13Map.lastEntry().getValue().getIndicatorValue());
-		ema5Map.put(candle.getTime(), new IndicatorValue(candle.getTime(), new5Ema, IndicatorType.EMA));
-		ema8Map.put(candle.getTime(), new IndicatorValue(candle.getTime(), new8Ema, IndicatorType.EMA));
-		ema12Map.put(candle.getTime(), new IndicatorValue(candle.getTime(), newfast12Ema, IndicatorType.EMA));
-		ema26Map.put(candle.getTime(), new IndicatorValue(candle.getTime(), newSlow26Ema, IndicatorType.EMA));
-		ema13Map.put(candle.getTime(), new IndicatorValue(candle.getTime(), new13Ema, IndicatorType.EMA));
-		RSI.updateRSI(candle, rsi);
-		ATR.updateATR(candle, atr);
-		MACD.updateMacdModel(this.macd, candle, newfast12Ema, newSlow26Ema, 9);
-		SMA.updateSMA(90, candle, this.sma90);
 		if (nextLevelsCalTime == null) {
 			Calendar cal = Calendar.getInstance();
 			cal.setTime(candle.getTime());
@@ -369,27 +315,23 @@ public class GannSquare9StrategyImpl implements GannSquare9Strategy {
 		}
 
 		if (candle.getTime().getTime() == nextLevelsCalTime.getTime()) {
-			levels = GannSquare9.getLevels(candle.getClose());
+			levels = PivotPoints.getLevels(prevDayCandle);
+			levels.addAll(GannSquare9.getLevels(candle.getClose()));
+			Collections.sort(levels);
 		}
-		
+
 	}
 
 	@Override
 	public void destroySetup() {
-		candle5Set = null;
-		atr = null;
-		rsi = null;
-		macd = null;
-		ema5Map = null;
-		ema8Map = null;
-		ema13Map = null;
-		ema12Map = null;
-		ema26Map = null;
-		sma90 = null;
+		candle15Set = null;
+		prevDayCandleSet = null;
 		levels = null;
 		nextLevelsCalTime = null;
-		/*candle5Set.clear();*/
-		
+		prevCandle = null;
+		/*candle15Set.clear();
+		 *prevDayCandleSet.clear();*/
+
 	}
 
 }

@@ -62,7 +62,7 @@ public class GannSquare9 {
 			levelsD.add(gannSq[i - (k + 1)][j + (k + 1)]);
 		}
 
-		levelsD.add(ltp);
+		//levelsD.add(ltp);
 
 		Collections.sort(levelsD);
 

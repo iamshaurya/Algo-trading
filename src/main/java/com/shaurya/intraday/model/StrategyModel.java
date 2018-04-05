@@ -64,11 +64,12 @@ public class StrategyModel {
 		double ad = Math.ceil((double) ai / 10);
 		double fa = (double) ad / 10;
 		this.sl = this.sl - fa;
+		System.out.println("Trailing sl for : "+this.security+" new sl : "+this.sl);
 	}
 
 	public void setTp(double sl) {
-		//20 to keep it open ended
-		int ai = (int) (this.sl * 20 * 100);
+		//50 to keep it open ended
+		int ai = (int) (this.sl * 50 * 100);
 		double ad = Math.ceil((double) ai / 10);
 		double fa = (double) ad / 10;
 		this.tp = fa;

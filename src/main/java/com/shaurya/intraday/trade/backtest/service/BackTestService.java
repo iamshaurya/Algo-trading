@@ -209,7 +209,6 @@ public class BackTestService {
 		Date fromDate = fromDateCal.getTime();
 		init(fromDate, security, strategyType);
 		while(itrCount > 0){
-			Thread.sleep(2000);
 			Calendar toDateCal = Calendar.getInstance();
 			toDateCal.setTime(fromDate);
 			toDateCal.set(Calendar.HOUR_OF_DAY, 15);

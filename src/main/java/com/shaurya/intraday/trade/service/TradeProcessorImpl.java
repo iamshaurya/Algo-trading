@@ -31,6 +31,7 @@ import com.shaurya.intraday.model.MailAccount;
 import com.shaurya.intraday.model.StrategyModel;
 import com.shaurya.intraday.strategy.EMAMacdAndRSIStrategy;
 import com.shaurya.intraday.strategy.EMAandRSIStrategy;
+import com.shaurya.intraday.strategy.GannSquare9Strategy;
 import com.shaurya.intraday.strategy.HeikinAshiOHLStrategy;
 import com.shaurya.intraday.strategy.MacdHistogramStrategy;
 import com.shaurya.intraday.strategy.ModifiedMacdAndRSIStrategy;
@@ -39,6 +40,7 @@ import com.shaurya.intraday.strategy.OpeningRangeBreakoutStrategy;
 import com.shaurya.intraday.strategy.Strategy;
 import com.shaurya.intraday.strategy.impl.EMAMacdAndRSIStrategyImpl;
 import com.shaurya.intraday.strategy.impl.EMAandRSIStrategyImpl;
+import com.shaurya.intraday.strategy.impl.GannSquare9StrategyImpl;
 import com.shaurya.intraday.strategy.impl.HeikinAshiOHLStrategyImpl;
 import com.shaurya.intraday.strategy.impl.MacdHistogramStrategyImpl;
 import com.shaurya.intraday.strategy.impl.ModifiedMacdAndRSIStrategyImpl;
@@ -253,6 +255,13 @@ public class TradeProcessorImpl implements TradeProcessor {
 					OpeningRangeBreakoutStrategy orb = new OpeningRangeBreakoutStrategyImpl();
 					orb.initializeSetup(cList);
 					strategyMap.put(e.getKey().getSecurity(), orb);
+					break;
+				case GANN_SQUARE_9:
+					cList = tradeService.getPrevDayCandles(e.getKey().getSecurityToken(), IntervalType.MINUTE_15,
+							rollDayOfYearByN(cal.getTime(), -6), cal.getTime(), 100);
+					GannSquare9Strategy gann = new GannSquare9StrategyImpl();
+					gann.initializeSetup(cList);
+					strategyMap.put(e.getKey().getSecurity(), gann);
 					break;
 				default:
 					break;

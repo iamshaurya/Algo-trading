@@ -275,5 +275,6 @@ public class HelperUtil {
 	public static boolean isNifty50Downtrend(Candle c) {
 		return c.getClose() <= (c.getOpen() * 0.9975);
 	}
+	
 
 }

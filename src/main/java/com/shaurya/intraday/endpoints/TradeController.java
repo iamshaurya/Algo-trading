@@ -4,11 +4,13 @@
 package com.shaurya.intraday.endpoints;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,7 +19,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.shaurya.intraday.constant.Constants;
+import com.shaurya.intraday.enums.IntervalType;
 import com.shaurya.intraday.enums.StrategyType;
+import com.shaurya.intraday.model.Candle;
 import com.shaurya.intraday.model.MailAccount;
 import com.shaurya.intraday.model.StrategyModel;
 import com.shaurya.intraday.trade.service.SetupServiceImpl;
@@ -79,9 +83,13 @@ public class TradeController {
 	}*/
 
 	@RequestMapping(value = "/test", method = RequestMethod.POST)
-	public ResponseEntity<String> test() {
-		tradeService.sendPNLStatement();
-		return new ResponseEntity<>("Check mail", HttpStatus.OK);
+	public ResponseEntity<List<Candle>> test(final @RequestParam(value = "security", required = true) Long security,
+			final @RequestParam(value = "intervalType", required = true) IntervalType intervalType,
+			final @RequestParam(value = "from", required = true) @DateTimeFormat(pattern="dd-MM-yyyy") Date from,
+			final @RequestParam(value = "to", required = true) @DateTimeFormat(pattern="dd-MM-yyyy") Date to,
+			final @RequestParam(value = "candleCount", required = true) Integer candleCount) {
+		return new ResponseEntity<List<Candle>>(
+				tradeService.getPrevDayCandles(security, IntervalType.MINUTE_15, from, to, candleCount), HttpStatus.OK);
 	}
 
 	@RequestMapping(value = "/test/indicator", method = RequestMethod.GET)

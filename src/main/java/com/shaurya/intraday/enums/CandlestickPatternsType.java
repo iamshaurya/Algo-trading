@@ -8,5 +8,5 @@ package com.shaurya.intraday.enums;
  *
  */
 public enum CandlestickPatternsType {
-	MARUBOZU(), DOJI_REVERSAL(), ENGULFING(), PEIRCING(), HARAMI();
+	MARUBOZU(), DOJI_REVERSAL(), ENGULFING(), PEIRCING(), HARAMI(), TWO_STRIKES();
 }

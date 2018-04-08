@@ -103,14 +103,14 @@ public class SuperTrendStrategyImpl implements SuperTrendStrategy {
 		double st7_2 = superTrend7_2.getSuperTrendMap().lastEntry().getValue().getIndicatorValue();
 		double st7_3 = superTrend7_3.getSuperTrendMap().lastEntry().getValue().getIndicatorValue();
 		double st10_3 = superTrend10_3.getSuperTrendMap().lastEntry().getValue().getIndicatorValue();
-		return (st7_2 > candle.getClose()) && (st7_3 > candle.getClose()) && (st10_3 > candle.getClose());
+		return (st7_2 < candle.getClose()) && (st7_3 < candle.getClose()) && (st10_3 < candle.getClose());
 	}
 	
 	public boolean shortSignal(Candle candle){
 		double st7_2 = superTrend7_2.getSuperTrendMap().lastEntry().getValue().getIndicatorValue();
 		double st7_3 = superTrend7_3.getSuperTrendMap().lastEntry().getValue().getIndicatorValue();
 		double st10_3 = superTrend10_3.getSuperTrendMap().lastEntry().getValue().getIndicatorValue();
-		return (st7_2 < candle.getClose()) && (st7_3 < candle.getClose()) && (st10_3 < candle.getClose());
+		return (st7_2 > candle.getClose()) && (st7_3 > candle.getClose()) && (st10_3 > candle.getClose());
 	}
 
 	@Override

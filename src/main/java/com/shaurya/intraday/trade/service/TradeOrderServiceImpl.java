@@ -71,10 +71,10 @@ public class TradeOrderServiceImpl implements TradeOrderService {
 		Double tPrice = null;
 		switch (model.getPosition()) {
 		case LONG:
-			tPrice = model.getTradePrice() - (model.getSl() * 3);
+			tPrice = model.getTradePrice() - (model.getSl() * 5);
 			break;
 		case SHORT:
-			tPrice = model.getTradePrice() + (model.getSl() * 3);
+			tPrice = model.getTradePrice() + (model.getSl() * 5);
 			break;
 		default:
 			break;

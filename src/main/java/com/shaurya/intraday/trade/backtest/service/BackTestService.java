@@ -169,7 +169,7 @@ public class BackTestService {
 			break;
 		case HEIKIN_ASHI_OHL:
 			niftyClist = new ArrayList<>();
-			cList = tradeService.getPrevDayCandles(token, IntervalType.MINUTE_15, fromDate, toDateInit,90);
+			cList = tradeService.getPrevDayCandles(token, IntervalType.MINUTE_5, fromDate, toDateInit,90);
 			strategy = new HeikinAshiOHLStrategyImpl();
 			strategy.initializeSetup(cList);
 			break;

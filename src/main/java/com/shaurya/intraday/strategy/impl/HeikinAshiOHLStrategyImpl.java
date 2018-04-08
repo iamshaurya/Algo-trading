@@ -3,6 +3,7 @@
  */
 package com.shaurya.intraday.strategy.impl;
 
+import static com.shaurya.intraday.util.CandlestickPatternHelper.dojiOrSpininTop;
 import static com.shaurya.intraday.util.HelperUtil.getNthLastKeyEntry;
 import static com.shaurya.intraday.util.HelperUtil.stopLossReached;
 import static com.shaurya.intraday.util.HelperUtil.takeProfitReached;
@@ -16,7 +17,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import com.shaurya.intraday.constant.Constants;
 import com.shaurya.intraday.enums.IndicatorType;
 import com.shaurya.intraday.enums.PositionType;
 import com.shaurya.intraday.indicator.ADX;
@@ -36,7 +36,6 @@ import com.shaurya.intraday.model.RSIModel;
 import com.shaurya.intraday.model.StrategyModel;
 import com.shaurya.intraday.strategy.HeikinAshiOHLStrategy;
 import com.shaurya.intraday.util.HeikinAshiBuilder;
-import com.shaurya.intraday.util.MailSender;
 
 /**
  * @author Shaurya
@@ -95,7 +94,7 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 	private HeikinAshiCandle form5MinCandle() {
 		HeikinAshiCandle haCandle = null;
 		Candle candle15min = null;
-		if (candleSet.size() == 15) {
+		if (candleSet.size() == 5) {
 			int i = 0;
 			Iterator<Candle> cItr = candleSet.iterator();
 			while (cItr.hasNext()) {
@@ -122,14 +121,16 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 		Date currentTime = candle.getTime();
 		double rsiValue = rsi.getRsiMap().get(currentTime).getIndicatorValue();
 		if (openTrade == null) {
-			if (bullishMarubozu(candle) && entryBullishMacd() && maUptrend(candle) && rsiValue < 70) {
+			if (bullishMarubozu(candle) && entryBullishMacd() && maUptrend(candle) && rsiValue < 70
+					&& !dojiOrSpininTop(candle)) {
 				dayTradeDone = true;
-				tradeCall = new StrategyModel(PositionType.LONG, (0.0025 * haCandle.getCandle().getClose()),
+				tradeCall = new StrategyModel(PositionType.LONG, (0.0015 * haCandle.getCandle().getClose()),
 						haCandle.getCandle().getClose(), candle.getSecurity(), null, 0, false);
 			}
-			if (bearishMarubozu(candle) && entryBearishMacd() && maDowntrend(candle) && rsiValue > 30) {
+			if (bearishMarubozu(candle) && entryBearishMacd() && maDowntrend(candle) && rsiValue > 30
+					&& !dojiOrSpininTop(candle)) {
 				dayTradeDone = true;
-				tradeCall = new StrategyModel(PositionType.SHORT, (0.0025 * haCandle.getCandle().getClose()),
+				tradeCall = new StrategyModel(PositionType.SHORT, (0.0015 * haCandle.getCandle().getClose()),
 						haCandle.getCandle().getClose(), candle.getSecurity(), null, 0, false);
 			}
 		} else {

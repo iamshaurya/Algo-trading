@@ -252,7 +252,7 @@ public class StockScreenerImpl implements StockScreener {
 			TreeMap<Date, IndicatorValue> ema26 = EMA.calculateEMA(26, cList);
 			MACDModel macd = MACD.calculateMACD(ema12, ema26, 12);
 			RSIModel rsi = RSI.calculateRSI(cList);
-			ATRModel atr = ATR.calculateATR(cList);
+			ATRModel atr = ATR.calculateATR(cList, 14);
 			double rsiValue = rsi.getRsiMap().lastEntry().getValue().getIndicatorValue();
 			double atrValue = atr.getAtrMap().lastEntry().getValue().getIndicatorValue();
 			// uptrend

@@ -374,7 +374,7 @@ public class TradeServiceImpl implements TradeService {
 
 		List<Candle> cList = getPrevDayCandles(5097729l, new Date());
 
-		atr = ATR.calculateATR(cList);
+		atr = ATR.calculateATR(cList, 14);
 		rsi = RSI.calculateRSI(cList);
 		adx = ADX.calculateADX(cList);
 		fastEmaMap = EMA.calculateEMA(20, cList);

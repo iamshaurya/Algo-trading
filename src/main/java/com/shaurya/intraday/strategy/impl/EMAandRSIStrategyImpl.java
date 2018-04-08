@@ -148,7 +148,7 @@ public class EMAandRSIStrategyImpl implements EMAandRSIStrategy {
 	@Override
 	public void initializeSetup(List<Candle> cList) {
 		candle5Set = new TreeSet<>();
-		atr = ATR.calculateATR(cList);
+		atr = ATR.calculateATR(cList, 14);
 		rsi = RSI.calculateRSI(cList);
 		fastEmaMap = EMA.calculateEMA(20, cList);
 		slowEmaMap = EMA.calculateEMA(50, cList);
@@ -174,7 +174,7 @@ public class EMAandRSIStrategyImpl implements EMAandRSIStrategy {
 		fastEmaMap.put(candle.getTime(), new IndicatorValue(candle.getTime(), newfastEma, IndicatorType.EMA));
 		slowEmaMap.put(candle.getTime(), new IndicatorValue(candle.getTime(), newSlowEma, IndicatorType.EMA));
 		RSI.updateRSI(candle, rsi);
-		ATR.updateATR(candle, atr);
+		ATR.updateATR(candle, atr, 14);
 	}
 
 	@Override

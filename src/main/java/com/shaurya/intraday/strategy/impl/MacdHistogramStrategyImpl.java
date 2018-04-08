@@ -214,7 +214,7 @@ public class MacdHistogramStrategyImpl implements MacdHistogramStrategy {
 	@Override
 	public void initializeSetup(List<Candle> cList) {
 		candleSet = new TreeSet<>();
-		atr = ATR.calculateATR(cList);
+		atr = ATR.calculateATR(cList, 14);
 		rsi = RSI.calculateRSI(cList);
 		adx = ADX.calculateADX(cList);
 		fastEmaMap = EMA.calculateEMA(12, cList);
@@ -273,7 +273,7 @@ public class MacdHistogramStrategyImpl implements MacdHistogramStrategy {
 		slowEmaMap.put(candle.getTime(), new IndicatorValue(candle.getTime(), newSlowEma, IndicatorType.EMA));
 		ema200Map.put(candle.getTime(), new IndicatorValue(candle.getTime(), new200Ema, IndicatorType.EMA));
 		RSI.updateRSI(candle, rsi);
-		ATR.updateATR(candle, atr);
+		ATR.updateATR(candle, atr, 14);
 		ADX.updateADX(candle, adx);
 		MACD.updateMacdModel(this.macd, candle, newfastEma, newSlowEma, 12);
 	}

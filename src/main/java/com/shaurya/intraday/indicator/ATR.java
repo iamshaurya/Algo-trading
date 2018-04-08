@@ -20,31 +20,31 @@ import com.shaurya.intraday.util.HelperUtil;
  *
  */
 public class ATR {
-	public static ATRModel calculateATR(List<Candle> cList) {
+	public static ATRModel calculateATR(List<Candle> cList, int period) {
 		List<IndicatorValue> atrList = new ArrayList<>();
-		if (cList.size() >= 14) {
+		if (cList.size() >= period) {
 			double hlDiff = (double) cList.get(0).getHigh() - cList.get(0).getLow();
 			double hcDiff = 0;
 			double lcDiff = 0;
 			double firstTR = hlDiff;
-			for (int i = 1; i < 14; i++) {
+			for (int i = 1; i < period; i++) {
 				hlDiff = (double) cList.get(i).getHigh() - cList.get(i).getLow();
 				hcDiff = Math.abs((double) (cList.get(i).getHigh() - cList.get(i - 1).getClose()));
 				lcDiff = Math.abs((double) (cList.get(i).getLow() - cList.get(i - 1).getClose()));
 
 				firstTR += Math.max(hlDiff, Math.max(hcDiff, lcDiff));
 			}
-			firstTR = (double) firstTR / 14;
+			firstTR = (double) firstTR / period;
 
-			atrList.add(new IndicatorValue(cList.get(14).getTime(), firstTR, IndicatorType.ATR));
+			atrList.add(new IndicatorValue(cList.get(period).getTime(), firstTR, IndicatorType.ATR));
 
-			populateATR(atrList, cList, 14);
+			populateATR(atrList, cList, period, period);
 		}
 		return new ATRModel(convertListToMap(atrList), cList.size() == 0 ? null : cList.get(cList.size() - 1),
 				EMA.calculateEMA(9, convertIndiactorValueToCandle(atrList)));
 	}
 
-	public static void populateATR(List<IndicatorValue> atrList, List<Candle> cList, int index) {
+	public static void populateATR(List<IndicatorValue> atrList, List<Candle> cList, int period, int index) {
 		if (index < cList.size()) {
 			double hlDiff = (double) cList.get(index).getHigh() - cList.get(index).getLow();
 			double hcDiff = Math.abs((double) (cList.get(index).getHigh() - cList.get(index - 1).getClose()));
@@ -52,11 +52,11 @@ public class ATR {
 
 			double tr = Math.max(hlDiff, Math.max(hcDiff, lcDiff));
 
-			tr = (double) (atrList.get(atrList.size() - 1).getIndicatorValue() * 13 + tr) / 14;
+			tr = (double) (atrList.get(atrList.size() - 1).getIndicatorValue() * (period -1) + tr) / period;
 
 			atrList.add(new IndicatorValue(cList.get(index).getTime(), tr, IndicatorType.ATR));
 
-			populateATR(atrList, cList, ++index);
+			populateATR(atrList, cList, period, ++index);
 		}
 	}
 
@@ -70,7 +70,7 @@ public class ATR {
 		return (double) (prevAtr * 13 + tr) / 14;
 	}
 
-	public static void updateATR(Candle candle, ATRModel atr) {
+	public static void updateATR(Candle candle, ATRModel atr, int period) {
 		double hlDiff = (double) candle.getHigh() - candle.getLow();
 		double hcDiff = Math.abs((double) (candle.getHigh() - atr.getLastCandle().getClose()));
 		double lcDiff = Math.abs((double) (candle.getLow() - atr.getLastCandle().getClose()));
@@ -79,7 +79,7 @@ public class ATR {
 
 		double prevAtr = atr.getAtrMap().lastEntry().getValue().getIndicatorValue();
 		double prevAtrSignal = atr.getAtrSignal().lastEntry().getValue().getIndicatorValue();
-		double currentAtr = (double) (prevAtr * 13 + tr) / 14;
+		double currentAtr = (double) (prevAtr * (period - 1) + tr) / period;
 		double atrSignal = EMA.calculateEMA(9,
 				new Candle(candle.getSecurity(), candle.getTime(), 0, 0, 0, currentAtr, 0), prevAtrSignal);
 		atr.getAtrMap().put(candle.getTime(), new IndicatorValue(candle.getTime(), currentAtr, IndicatorType.ATR));

@@ -34,6 +34,7 @@ import com.shaurya.intraday.strategy.impl.GannSquare9StrategyImpl;
 import com.shaurya.intraday.strategy.impl.HeikinAshiOHLStrategyImpl;
 import com.shaurya.intraday.strategy.impl.OpenHighLowStrategyImpl;
 import com.shaurya.intraday.strategy.impl.OpeningRangeBreakoutStrategyImpl;
+import com.shaurya.intraday.strategy.impl.SuperTrendStrategyImpl;
 import com.shaurya.intraday.trade.service.StockScreener;
 import com.shaurya.intraday.trade.service.TradeService;
 import com.shaurya.intraday.util.MailSender;
@@ -184,6 +185,13 @@ public class BackTestService {
 			cList = tradeService.getPrevDayCandles(token, IntervalType.MINUTE_5, fromDate, toDateInit, 200);
 			strategy = new GannSquare9StrategyImpl();
 			strategy.initializeSetup(cList);
+			break;
+		case SUPER_TREND:
+			niftyClist = new ArrayList<>();
+			cList = tradeService.getPrevDayCandles(token, IntervalType.MINUTE_5, fromDate, toDateInit, 200);
+			strategy = new SuperTrendStrategyImpl();
+			strategy.initializeSetup(cList);
+			break;
 		default:
 			break;
 		}

@@ -319,7 +319,7 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 			haList.add(hac.getHaCandle());
 		}
 		candleSet = new TreeSet<>();
-		atr = ATR.calculateATR(haList);
+		atr = ATR.calculateATR(haList, 14);
 		rsi = RSI.calculateRSI(haList);
 		adx = ADX.calculateADX(haList);
 		fastEmaMap = EMA.calculateEMA(12, haList);
@@ -390,7 +390,7 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 		ema9Map.put(candle.getTime(), new IndicatorValue(candle.getTime(), new9Ema, IndicatorType.EMA));
 		ema21Map.put(candle.getTime(), new IndicatorValue(candle.getTime(), new21Ema, IndicatorType.EMA));
 		RSI.updateRSI(candle, rsi);
-		ATR.updateATR(candle, atr);
+		ATR.updateATR(candle, atr, 14);
 		ADX.updateADX(candle, adx);
 		MACD.updateMacdModel(this.macd, candle, newfastEma, newSlowEma, 9);
 		

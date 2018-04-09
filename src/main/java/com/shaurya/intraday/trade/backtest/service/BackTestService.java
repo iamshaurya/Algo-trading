@@ -47,6 +47,7 @@ import com.zerodhatech.kiteconnect.kitehttp.exceptions.KiteException;
  */
 @Service
 public class BackTestService {
+	//assumed 1.15% for 2500, 0.85 for 25000
 	@Autowired
 	private TradeService tradeService;
 	@Autowired
@@ -238,29 +239,13 @@ public class BackTestService {
 			itrCount--;
 			
 			StrategyModel openTrade = null;
+			double initialBalance = 100000;
 			int successfullTrade = 0;
 			int unsuccessfullTrade = 0;
-			double ltp = 0;
 			double initailPrice = cList.size() > 0 ?cList.get(0).getOpen(): -1;
+			double monthlyTurnover = 0;
 			double pnl = 0;
 			for (int i = 0; i < cList.size(); i++) {
-				/*if(openTrade != null){
-					int tsl = 0;
-					if(openTrade.getPosition() == PositionType.LONG){
-						double lastLevelPrice = ltp == 0 ? openTrade.getTradePrice() : ltp;
-						if(cList.get(i).getClose() - lastLevelPrice >= 1){
-							tsl = (int)(cList.get(i).getClose() - lastLevelPrice);
-							ltp = cList.get(i).getClose();
-						}
-					}else{
-						double lastLevelPrice = ltp == 0 ? openTrade.getTradePrice() : ltp;
-						if(lastLevelPrice - cList.get(i).getClose() >= 1){
-							tsl = (int)(lastLevelPrice - cList.get(i).getClose());
-							ltp = cList.get(i).getClose();
-						}
-					}
-					openTrade.trailSl(tsl);
-				}*/
 				StrategyModel tradeCall = strategy.processTrades(cList.get(i), openTrade, true);
 				if (isIntradayClosingTime(cList.get(i).getTime())) {
 					if (openTrade != null) {
@@ -280,8 +265,8 @@ public class BackTestService {
 								unsuccessfullTrade++;
 							}
 						}
+						monthlyTurnover += openTrade.getQuantity()*cList.get(i).getClose();
 						openTrade = null;
-						ltp = 0;
 					}
 					//niftyLastClose = niftyClist.get(i).getClose();
 					strategy.destroySetup();
@@ -303,10 +288,12 @@ public class BackTestService {
 								unsuccessfullTrade++;
 							}
 						}
+						monthlyTurnover += openTrade.getQuantity()*tradeCall.getTradePrice();
 						openTrade = null;
-						ltp = 0;
 					} else {
 						openTrade = tradeCall;
+						openTrade.setQuantity((int) (initialBalance/openTrade.getTradePrice()));
+						monthlyTurnover += openTrade.getQuantity()*openTrade.getTradePrice();
 						switch (tradeCall.getPosition()) {
 						case LONG:
 							System.out.println("Long Entry at : "+cList.get(i).getTime()+" values : " + tradeCall.toString());
@@ -324,10 +311,23 @@ public class BackTestService {
 			//System.out.println("Unsuccessfull trades: " + unsuccessfullTrade);
 			double pnlPer = (pnl / initailPrice) * 100;
 			//System.out.println("PnL : " + pnlPer + "%");
+			double brokerageCharge = brokerageCharge(monthlyTurnover);
+			pnlPer = pnlPer - ((double)(brokerageCharge/initialBalance)*100);
 			monthlyResultList.add(new BacktestResult(successfullTrade, unsuccessfullTrade, pnlPer));
 		}
 		resultMap.put(security, monthlyResultList);
 		destroy();
+	}
+	
+	private double brokerageCharge(double turnover) {
+		double brokerage = Math.min((turnover * 0.0001), 20);
+		double stt = 0.00025 * ((double)turnover/2);
+		double transactionCharge = (0.0000325 * turnover);
+		double gst = 0.18 * (transactionCharge + brokerage);
+		double sebiCharge = (0.0000015 * turnover);
+		double stampCharge = (0.00003 * turnover);
+
+		return brokerage + stt + transactionCharge + gst + sebiCharge + stampCharge;
 	}
 
 	private boolean isIntradayClosingTime(Date time) {

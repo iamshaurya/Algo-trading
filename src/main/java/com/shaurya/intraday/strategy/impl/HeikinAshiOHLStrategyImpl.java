@@ -3,7 +3,7 @@
  */
 package com.shaurya.intraday.strategy.impl;
 
-import static com.shaurya.intraday.util.CandlestickPatternHelper.dojiOrSpininTop;
+import static com.shaurya.intraday.util.CandlestickPatternHelper.*;
 import static com.shaurya.intraday.util.HelperUtil.getNthLastKeyEntry;
 import static com.shaurya.intraday.util.HelperUtil.stopLossReached;
 import static com.shaurya.intraday.util.HelperUtil.takeProfitReached;
@@ -94,7 +94,7 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 	private HeikinAshiCandle form5MinCandle() {
 		HeikinAshiCandle haCandle = null;
 		Candle candle15min = null;
-		if (candleSet.size() == 5) {
+		if (candleSet.size() == 15) {
 			int i = 0;
 			Iterator<Candle> cItr = candleSet.iterator();
 			while (cItr.hasNext()) {
@@ -121,14 +121,12 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 		Date currentTime = candle.getTime();
 		double rsiValue = rsi.getRsiMap().get(currentTime).getIndicatorValue();
 		if (openTrade == null) {
-			if (bullishMarubozu(candle) && entryBullishMacd() && maUptrend(candle) && rsiValue < 70
-					&& !dojiOrSpininTop(candle)) {
+			if (bullishMarubozu(candle) && entryBullishMacd() && maUptrend(candle) && rsiValue < 70) {
 				dayTradeDone = true;
 				tradeCall = new StrategyModel(PositionType.LONG, (0.0015 * haCandle.getCandle().getClose()),
 						haCandle.getCandle().getClose(), candle.getSecurity(), null, 0, false);
 			}
-			if (bearishMarubozu(candle) && entryBearishMacd() && maDowntrend(candle) && rsiValue > 30
-					&& !dojiOrSpininTop(candle)) {
+			if (bearishMarubozu(candle) && entryBearishMacd() && maDowntrend(candle) && rsiValue > 30) {
 				dayTradeDone = true;
 				tradeCall = new StrategyModel(PositionType.SHORT, (0.0015 * haCandle.getCandle().getClose()),
 						haCandle.getCandle().getClose(), candle.getSecurity(), null, 0, false);
@@ -253,13 +251,6 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 		return (prevHistogramValue < currentHistogramValue);
 	}
 
-	private boolean greenCandle(Candle candle) {
-		return candle.getOpen() <= candle.getClose();
-	}
-
-	private boolean redCandle(Candle candle) {
-		return candle.getOpen() >= candle.getClose();
-	}
 
 	private boolean bearishMarubozu(Candle candle) {
 		if ((prevCandle.getHaCandle().getOpen() > prevCandle.getHaCandle().getClose())

@@ -3,7 +3,8 @@
  */
 package com.shaurya.intraday.strategy.impl;
 
-import static com.shaurya.intraday.util.CandlestickPatternHelper.*;
+import static com.shaurya.intraday.util.CandlestickPatternHelper.greenCandle;
+import static com.shaurya.intraday.util.CandlestickPatternHelper.redCandle;
 import static com.shaurya.intraday.util.HelperUtil.getNthLastKeyEntry;
 import static com.shaurya.intraday.util.HelperUtil.stopLossReached;
 import static com.shaurya.intraday.util.HelperUtil.takeProfitReached;
@@ -49,8 +50,9 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 	private ADXModel adx;
 	private TreeMap<Date, IndicatorValue> fastEmaMap;
 	private TreeMap<Date, IndicatorValue> slowEmaMap;
-	private TreeMap<Date, IndicatorValue> ema9Map;
-	private TreeMap<Date, IndicatorValue> ema21Map;
+	private TreeMap<Date, IndicatorValue> ema5Map;
+	private TreeMap<Date, IndicatorValue> ema8Map;
+	private TreeMap<Date, IndicatorValue> ema13Map;
 	private TreeSet<Candle> candleSet;
 	private HeikinAshiCandle prevCandle;
 	private List<Level> levels;
@@ -79,19 +81,19 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 	public StrategyModel processTrades(Candle candle, StrategyModel openTrade, boolean updateSetup) {
 		if (updateSetup) {
 			candleSet.add(candle);
-			HeikinAshiCandle candle5min = form5MinCandle();
-			if (candle5min != null) {
-				updateSetup(candle5min.getHaCandle());
-				if(levels == null || levels.isEmpty()){
-					levels = GannSquare9.getLevels(candle5min.getCandle().getClose());
+			HeikinAshiCandle candle15min = form15MinCandle();
+			if (candle15min != null) {
+				updateSetup(candle15min.getHaCandle());
+				if (levels == null || levels.isEmpty()) {
+					levels = GannSquare9.getLevels(candle15min.getCandle().getClose());
 				}
-				return getTradeCall(candle5min, openTrade);
+				return getTradeCall(candle15min, openTrade);
 			}
 		}
 		return null;
 	}
 
-	private HeikinAshiCandle form5MinCandle() {
+	private HeikinAshiCandle form15MinCandle() {
 		HeikinAshiCandle haCandle = null;
 		Candle candle15min = null;
 		if (candleSet.size() == 15) {
@@ -121,12 +123,12 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 		Date currentTime = candle.getTime();
 		double rsiValue = rsi.getRsiMap().get(currentTime).getIndicatorValue();
 		if (openTrade == null) {
-			if (bullishMarubozu(candle) && entryBullishMacd() && maUptrend(candle) && rsiValue < 70) {
+			if (bullishMarubozu(candle) && maUptrend(candle) && rsiValue < 70) {
 				dayTradeDone = true;
 				tradeCall = new StrategyModel(PositionType.LONG, (0.0015 * haCandle.getCandle().getClose()),
 						haCandle.getCandle().getClose(), candle.getSecurity(), null, 0, false);
 			}
-			if (bearishMarubozu(candle) && entryBearishMacd() && maDowntrend(candle) && rsiValue > 30) {
+			if (bearishMarubozu(candle) && maDowntrend(candle) && rsiValue > 30) {
 				dayTradeDone = true;
 				tradeCall = new StrategyModel(PositionType.SHORT, (0.0015 * haCandle.getCandle().getClose()),
 						haCandle.getCandle().getClose(), candle.getSecurity(), null, 0, false);
@@ -142,11 +144,13 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 				tradeCall = new StrategyModel(openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
 						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
 			}
-			if (openTrade.getPosition() == PositionType.LONG && (entryBearishMacd() || maUptrendExit(candle))) {
+			if (openTrade.getPosition() == PositionType.LONG
+					&& (!maUptrend(candle) || redCandle(candle))) {
 				tradeCall = new StrategyModel(openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
 						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
 			}
-			if (openTrade.getPosition() == PositionType.SHORT && (entryBullishMacd() || maDowntrendExit(candle))) {
+			if (openTrade.getPosition() == PositionType.SHORT
+					&& (!maDowntrend(candle) || greenCandle(candle))) {
 				tradeCall = new StrategyModel(openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
 						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
 			}
@@ -155,7 +159,7 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 		return tradeCall;
 
 	}
-	
+
 	private boolean bullishBreakout(Candle candle) {
 		boolean breakout = false;
 		Level currPriceLevel = new Level(candle.getClose(), false);
@@ -163,14 +167,14 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 		auxList.add(currPriceLevel);
 		Collections.sort(auxList);
 		int index = auxList.indexOf(currPriceLevel);
-		if (index > 0 && index < (auxList.size()-1)) {
+		if (index > 0 && index < (auxList.size() - 1)) {
 			double supportVal = auxList.get(index - 1).getValue();
 			double resistanceVal = auxList.get(index + 1).getValue();
-			breakout = (resistanceVal - candle.getClose()) > (candle.getClose() - supportVal) ;
+			breakout = (resistanceVal - candle.getClose()) > (candle.getClose() - supportVal);
 		}
 		return breakout;
 	}
-	
+
 	private boolean bearishBreakout(Candle candle) {
 		boolean breakout = false;
 		Level currPriceLevel = new Level(candle.getClose(), false);
@@ -178,37 +182,36 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 		auxList.add(currPriceLevel);
 		Collections.sort(auxList);
 		int index = auxList.indexOf(currPriceLevel);
-		if (index > 0 && index < (auxList.size()-1)) {
+		if (index > 0 && index < (auxList.size() - 1)) {
 			double supportVal = auxList.get(index - 1).getValue();
 			double resistanceVal = auxList.get(index + 1).getValue();
 			breakout = (candle.getClose() - supportVal) > (resistanceVal - candle.getClose());
 		}
 		return breakout;
 	}
-	
 
 	private boolean maUptrendExit(Candle candle) {
-		Date currentTime = getNthLastKeyEntry(ema21Map, 1);
-		return (candle.getClose() < ema21Map.get(currentTime).getIndicatorValue())
-				|| (ema9Map.get(currentTime).getIndicatorValue() < ema21Map.get(currentTime).getIndicatorValue());
+		Date currentTime = getNthLastKeyEntry(ema8Map, 1);
+		return (candle.getClose() < ema8Map.get(currentTime).getIndicatorValue())
+				|| (ema5Map.get(currentTime).getIndicatorValue() < ema8Map.get(currentTime).getIndicatorValue());
 	}
 
 	private boolean maDowntrendExit(Candle candle) {
-		Date currentTime = getNthLastKeyEntry(ema21Map, 1);
-		return (candle.getClose() > ema21Map.get(currentTime).getIndicatorValue())
-				|| (ema9Map.get(currentTime).getIndicatorValue() > ema21Map.get(currentTime).getIndicatorValue());
+		Date currentTime = getNthLastKeyEntry(ema8Map, 1);
+		return (candle.getClose() > ema8Map.get(currentTime).getIndicatorValue())
+				|| (ema5Map.get(currentTime).getIndicatorValue() > ema8Map.get(currentTime).getIndicatorValue());
 	}
 
 	private boolean maUptrend(Candle candle) {
-		Date currentTime = getNthLastKeyEntry(ema21Map, 1);
-		return (candle.getClose() > ema21Map.get(currentTime).getIndicatorValue())
-				&& (ema9Map.get(currentTime).getIndicatorValue() > ema21Map.get(currentTime).getIndicatorValue());
+		Date currentTime = getNthLastKeyEntry(ema13Map, 1);
+		return (ema5Map.get(currentTime).getIndicatorValue() > ema8Map.get(currentTime).getIndicatorValue())
+				&& (ema8Map.get(currentTime).getIndicatorValue() > ema13Map.get(currentTime).getIndicatorValue());
 	}
 
 	private boolean maDowntrend(Candle candle) {
-		Date currentTime = getNthLastKeyEntry(ema21Map, 1);
-		return (candle.getClose() < ema21Map.get(currentTime).getIndicatorValue())
-				&& (ema9Map.get(currentTime).getIndicatorValue() < ema21Map.get(currentTime).getIndicatorValue());
+		Date currentTime = getNthLastKeyEntry(ema13Map, 1);
+		return (ema5Map.get(currentTime).getIndicatorValue() < ema8Map.get(currentTime).getIndicatorValue())
+				&& (ema8Map.get(currentTime).getIndicatorValue() < ema13Map.get(currentTime).getIndicatorValue());
 	}
 
 	private boolean entryBearishMacd() {
@@ -251,7 +254,6 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 		return (prevHistogramValue < currentHistogramValue);
 	}
 
-
 	private boolean bearishMarubozu(Candle candle) {
 		if ((prevCandle.getHaCandle().getOpen() > prevCandle.getHaCandle().getClose())
 				&& (candle.getOpen() > candle.getClose())
@@ -276,7 +278,6 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 		return adx.getAdx().getIndicatorValue() > 20;
 	}
 
-	
 	private boolean isTradableRange() {
 		double stockPrice = prevCandle.getHaCandle().getClose();
 		Date currentTime = getNthLastKeyEntry(atr.getAtrMap(), 1);
@@ -284,7 +285,7 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 		double range = atr.getAtrMap().lastEntry().getValue().getIndicatorValue();
 		return (range >= (0.004 * stockPrice)) && (range <= (0.02 * stockPrice));
 	}
-	
+
 	private boolean highVolatility() {
 		Date currentTime = getNthLastKeyEntry(atr.getAtrMap(), 1);
 		double atrValue = atr.getAtrMap().get(currentTime).getIndicatorValue();
@@ -293,12 +294,12 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 	}
 
 	private boolean isUptrend(Candle candle) {
-		double lastEma9 = ema9Map.lastEntry().getValue().getIndicatorValue();
+		double lastEma9 = ema5Map.lastEntry().getValue().getIndicatorValue();
 		return candle.getClose() >= lastEma9;
 	}
 
 	private boolean isDowntrend(Candle candle) {
-		double lastEma9 = ema9Map.lastEntry().getValue().getIndicatorValue();
+		double lastEma9 = ema5Map.lastEntry().getValue().getIndicatorValue();
 		return candle.getClose() <= lastEma9;
 	}
 
@@ -316,8 +317,9 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 		fastEmaMap = EMA.calculateEMA(12, haList);
 		slowEmaMap = EMA.calculateEMA(26, haList);
 		macd = MACD.calculateMACD(fastEmaMap, slowEmaMap, 9);
-		ema9Map = EMA.calculateEMA(9, haList);
-		ema21Map = EMA.calculateEMA(21, haList);
+		ema5Map = EMA.calculateEMA(5, haList);
+		ema8Map = EMA.calculateEMA(8, haList);
+		ema13Map = EMA.calculateEMA(13, haList);
 		prevCandle = HeikinAshiBuilder.convert(cList.get(cList.size() - 1), null);
 		dayTradeDone = false;
 		sendInitSetupDataMail();
@@ -333,8 +335,8 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 		IndicatorValue slowEma = slowEmaMap.lastEntry().getValue();
 		IndicatorValue macdIv = macd.getMacdMap().lastEntry().getValue();
 		IndicatorValue macdSignalIv = macd.getSignalMap().lastEntry().getValue();
-		IndicatorValue ema9 = ema9Map.lastEntry().getValue();
-		IndicatorValue ema21 = ema21Map.lastEntry().getValue();
+		IndicatorValue ema9 = ema5Map.lastEntry().getValue();
+		IndicatorValue ema21 = ema8Map.lastEntry().getValue();
 		System.out.println("sendInitSetupDataMail atr :: " + atrIv.toString());
 		System.out.println("sendInitSetupDataMail adx :: " + adxIv.toString());
 		System.out.println("sendInitSetupDataMail rsi :: " + rsiIv.toString());
@@ -348,11 +350,13 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 				+ rsiIv.toString() + "\n" + "fast ema : " + fastEma.toString() + "\n" + "slow ema : "
 				+ slowEma.toString() + "\n" + "macd : " + macdIv.toString() + "\n" + "macd signal : "
 				+ macdSignalIv.toString() + "\n" + "9 ema : " + ema9.toString() + "\n" + "21 ema : " + ema21.toString();
-		//MailSender.sendMail(Constants.TO_MAIL, Constants.TO_NAME, Constants.MACD_RSI_STRATEGY_SETUP_DATA, mailbody);
+		// MailSender.sendMail(Constants.TO_MAIL, Constants.TO_NAME,
+		// Constants.MACD_RSI_STRATEGY_SETUP_DATA, mailbody);
 	}
 
 	@Override
 	public void destroySetup() {
+
 		candleSet = null;
 		atr = null;
 		rsi = null;
@@ -360,13 +364,16 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 		adx = null;
 		fastEmaMap = null;
 		slowEmaMap = null;
-		ema9Map = null;
-		ema21Map = null;
+		ema5Map = null;
+		ema8Map = null;
+		ema13Map = null;
 		dayTradeDone = false;
 		prevCandle = null;
 		levels = null;
-		/*candleSet.clear();
-		dayTradeDone = false;*/
+
+		/*
+		 * candleSet.clear(); dayTradeDone = false;
+		 */
 	}
 
 	@Override
@@ -374,17 +381,19 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 		System.out.println("updateSetup date :: " + candle.getTime());
 		double newfastEma = EMA.calculateEMA(12, candle, fastEmaMap.lastEntry().getValue().getIndicatorValue());
 		double newSlowEma = EMA.calculateEMA(26, candle, slowEmaMap.lastEntry().getValue().getIndicatorValue());
-		double new9Ema = EMA.calculateEMA(9, candle, ema9Map.lastEntry().getValue().getIndicatorValue());
-		double new21Ema = EMA.calculateEMA(21, candle, ema21Map.lastEntry().getValue().getIndicatorValue());
+		double new5Ema = EMA.calculateEMA(5, candle, ema5Map.lastEntry().getValue().getIndicatorValue());
+		double new8Ema = EMA.calculateEMA(8, candle, ema8Map.lastEntry().getValue().getIndicatorValue());
+		double new13Ema = EMA.calculateEMA(13, candle, ema13Map.lastEntry().getValue().getIndicatorValue());
 		fastEmaMap.put(candle.getTime(), new IndicatorValue(candle.getTime(), newfastEma, IndicatorType.EMA));
 		slowEmaMap.put(candle.getTime(), new IndicatorValue(candle.getTime(), newSlowEma, IndicatorType.EMA));
-		ema9Map.put(candle.getTime(), new IndicatorValue(candle.getTime(), new9Ema, IndicatorType.EMA));
-		ema21Map.put(candle.getTime(), new IndicatorValue(candle.getTime(), new21Ema, IndicatorType.EMA));
+		ema5Map.put(candle.getTime(), new IndicatorValue(candle.getTime(), new5Ema, IndicatorType.EMA));
+		ema8Map.put(candle.getTime(), new IndicatorValue(candle.getTime(), new8Ema, IndicatorType.EMA));
+		ema13Map.put(candle.getTime(), new IndicatorValue(candle.getTime(), new13Ema, IndicatorType.EMA));
 		RSI.updateRSI(candle, rsi);
 		ATR.updateATR(candle, atr, 14);
 		ADX.updateADX(candle, adx);
 		MACD.updateMacdModel(this.macd, candle, newfastEma, newSlowEma, 9);
-		
+
 	}
 
 }

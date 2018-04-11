@@ -243,8 +243,8 @@ public class TradeProcessorImpl implements TradeProcessor {
 					strategyMap.put(e.getKey().getSecurity(), ohl);
 					break;
 				case HEIKIN_ASHI_OHL:
-					cList = tradeService.getPrevDayCandles(e.getKey().getSecurityToken(), IntervalType.MINUTE_5,
-							rollDayOfYearByN(cal.getTime(), -4), cal.getTime(), 200);
+					cList = tradeService.getPrevDayCandles(e.getKey().getSecurityToken(), IntervalType.MINUTE_15,
+							rollDayOfYearByN(cal.getTime(), -6), cal.getTime(), 100);
 					HeikinAshiOHLStrategy haOhl = new HeikinAshiOHLStrategyImpl();
 					haOhl.initializeSetup(cList);
 					strategyMap.put(e.getKey().getSecurity(), haOhl);

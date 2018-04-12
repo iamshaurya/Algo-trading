@@ -72,12 +72,12 @@ public class OpenHighLowStrategyImpl implements OpenHighLowStrategy {
 		if (openTrade == null) {
 			if (!dayTradeDone && CandlestickPatternHelper.bullishMarubozu(current30Candle)) {
 				dayTradeDone = true;
-				tradeCall = new StrategyModel(PositionType.LONG, (0.0015 * candle.getClose()), candle.getClose(),
+				tradeCall = new StrategyModel(PositionType.LONG, (0.0025 * candle.getClose()), candle.getClose(),
 						candle.getSecurity(), null, 0, false);
 			}
 			if (!dayTradeDone && CandlestickPatternHelper.bearishMarubozu(current30Candle)) {
 				dayTradeDone = true;
-				tradeCall = new StrategyModel(PositionType.SHORT, (0.0015 * candle.getClose()), candle.getClose(),
+				tradeCall = new StrategyModel(PositionType.SHORT, (0.0025 * candle.getClose()), candle.getClose(),
 						candle.getSecurity(), null, 0, false);
 			}
 		} else {

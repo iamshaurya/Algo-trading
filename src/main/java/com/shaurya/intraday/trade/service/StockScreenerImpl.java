@@ -205,12 +205,16 @@ public class StockScreenerImpl implements StockScreener {
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
-				List<Candle> cList = tradeService.getPrevDayCandles(tokenNameMap.get(vs.getSymbol()), IntervalType.DAY,
-						fromCal.getTime(), toCal.getTime(), 200);
-				if (strategyMap.get(StrategyType.HEIKIN_ASHI_OHL) == null) {
-					strategyMap.put(StrategyType.HEIKIN_ASHI_OHL, new ArrayList<>());
+				/*List<Candle> cList = tradeService.getPrevDayCandles(tokenNameMap.get(vs.getSymbol()), IntervalType.DAY,
+						fromCal.getTime(), toCal.getTime(), 200);*/
+				if (strategyMap.get(StrategyType.OPEN_HIGH_LOW) == null) {
+					strategyMap.put(StrategyType.OPEN_HIGH_LOW, new ArrayList<>());
 				}
-				StrategyModel sm = getDailyChartStrategy(cList, margins, tokenNameMap);
+				StrategyModel sm  = new StrategyModel();
+				sm.setSecurity(vs.getSymbol());
+				sm.setMarginMultiplier(20.8);
+				sm.setPreferedPosition(PositionType.BOTH);
+				sm.setSecurityToken(tokenNameMap.get(vs.getSymbol()));
 				if (sm != null) {
 					strategyMap.get(StrategyType.HEIKIN_ASHI_OHL).add(sm);
 				}
@@ -224,7 +228,7 @@ public class StockScreenerImpl implements StockScreener {
 
 	private List<VolatileStock> downloadVolatileStock() {
 		List<VolatileStock> vsEntityList = new ArrayList<>();
-		List<String> vsList = fetchTopVolatileStock();
+		List<String> vsList = fetchTopAnnualVolatileStock();
 		for (String s : vsList) {
 			VolatileStock vs = TradeBuilder.convertToVolatileStock(s);
 			vs = vsRepo.update(vs);

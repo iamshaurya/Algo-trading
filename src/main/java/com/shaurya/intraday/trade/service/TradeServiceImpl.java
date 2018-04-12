@@ -287,6 +287,16 @@ public class TradeServiceImpl implements TradeService {
 	}
 
 	@Override
+	public Integer fetchNumberOfTradesForTheDay(){
+		List<Trade> tradeList = tradeRepo.fetchByQuery(TradeQueryBuilder.queryToFetchDayTrades(
+				getDateStringFormat(getDayStartTime().getTime()), getDateStringFormat(getDayEndTime().getTime())));
+		if(tradeList != null && !tradeList.isEmpty()){
+			return tradeList.size();
+		}
+		return 0;
+	}
+	
+	@Override
 	public void sendPNLStatement() {
 		Map<String, List<Trade>> securityTradeMap = new HashMap<>();
 		List<Trade> tradeList = tradeRepo.fetchByQuery(TradeQueryBuilder.queryToFetchDayTrades(

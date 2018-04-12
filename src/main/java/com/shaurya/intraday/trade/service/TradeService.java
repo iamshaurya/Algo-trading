@@ -14,7 +14,6 @@ import com.shaurya.intraday.enums.TradeExitReason;
 import com.shaurya.intraday.model.Candle;
 import com.shaurya.intraday.model.StrategyModel;
 import com.zerodhatech.kiteconnect.kitehttp.exceptions.KiteException;
-import com.zerodhatech.models.Tick;
 
 /**
  * @author Shaurya
@@ -57,4 +56,6 @@ public interface TradeService {
 	public void updateStrategyStocks(List<StrategyModel> smList);
 
 	public Map<StrategyModel, StrategyType> getAllTradeStrategy();
+
+	Integer fetchNumberOfTradesForTheDay();
 }

@@ -41,7 +41,7 @@ public class ATR {
 			populateATR(atrList, cList, period, period);
 		}
 		return new ATRModel(convertListToMap(atrList), cList.size() == 0 ? null : cList.get(cList.size() - 1),
-				EMA.calculateEMA(9, convertIndiactorValueToCandle(atrList)));
+				EMA.calculateEMA(5, convertIndiactorValueToCandle(atrList)));
 	}
 
 	public static void populateATR(List<IndicatorValue> atrList, List<Candle> cList, int period, int index) {
@@ -80,7 +80,7 @@ public class ATR {
 		double prevAtr = atr.getAtrMap().lastEntry().getValue().getIndicatorValue();
 		double prevAtrSignal = atr.getAtrSignal().lastEntry().getValue().getIndicatorValue();
 		double currentAtr = (double) (prevAtr * (period - 1) + tr) / period;
-		double atrSignal = EMA.calculateEMA(9,
+		double atrSignal = EMA.calculateEMA(5,
 				new Candle(candle.getSecurity(), candle.getTime(), 0, 0, 0, currentAtr, 0), prevAtrSignal);
 		atr.getAtrMap().put(candle.getTime(), new IndicatorValue(candle.getTime(), currentAtr, IndicatorType.ATR));
 		atr.getAtrSignal().put(candle.getTime(), new IndicatorValue(candle.getTime(), atrSignal, IndicatorType.EMA));

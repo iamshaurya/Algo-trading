@@ -29,7 +29,7 @@ import com.shaurya.intraday.model.Candle;
 import com.shaurya.intraday.model.MailAccount;
 import com.shaurya.intraday.model.StrategyModel;
 import com.shaurya.intraday.strategy.Strategy;
-import com.shaurya.intraday.strategy.impl.EMAandRSIStrategyImpl;
+import com.shaurya.intraday.strategy.impl.EMAMacdAndRSIStrategyImpl;
 import com.shaurya.intraday.strategy.impl.GannSquare9StrategyImpl;
 import com.shaurya.intraday.strategy.impl.HeikinAshiOHLStrategyImpl;
 import com.shaurya.intraday.strategy.impl.OpenHighLowStrategyImpl;
@@ -157,10 +157,10 @@ public class BackTestService {
 		List<Candle> niftyClist = null;
 		List<Candle> cList = null;
 		switch (strategyType) {
-		case EMA_RSI:
+		case MACD_RSI:
 			niftyClist = new ArrayList<>();
-			cList = tradeService.getPrevDayCandles(token, IntervalType.MINUTE_15, fromDate, toDateInit,200);
-			strategy = new EMAandRSIStrategyImpl();
+			cList = tradeService.getPrevDayCandles(token, IntervalType.MINUTE_5, fromDate, toDateInit,200);
+			strategy = new EMAMacdAndRSIStrategyImpl();
 			strategy.initializeSetup(cList);
 			break;
 		case OPEN_HIGH_LOW:
@@ -171,19 +171,19 @@ public class BackTestService {
 			break;
 		case HEIKIN_ASHI_OHL:
 			niftyClist = new ArrayList<>();
-			cList = tradeService.getPrevDayCandles(token, IntervalType.MINUTE_5, fromDate, toDateInit,90);
+			cList = tradeService.getPrevDayCandles(token, IntervalType.MINUTE_15, fromDate, toDateInit,90);
 			strategy = new HeikinAshiOHLStrategyImpl();
 			strategy.initializeSetup(cList);
 			break;
 		case OPENING_RANGE_BREAKOUT:
 			niftyClist = new ArrayList<>();
-			cList = tradeService.getPrevDayCandles(token, IntervalType.MINUTE_5, fromDate, toDateInit, 200);
+			cList = tradeService.getPrevDayCandles(token, IntervalType.MINUTE_30, fromDate, toDateInit, 200);
 			strategy = new OpeningRangeBreakoutStrategyImpl();
 			strategy.initializeSetup(cList);
 			break;
 		case GANN_SQUARE_9:
 			niftyClist = new ArrayList<>();
-			cList = tradeService.getPrevDayCandles(token, IntervalType.MINUTE_5, fromDate, toDateInit, 200);
+			cList = tradeService.getPrevDayCandles(token, IntervalType.MINUTE_5, fromDate, toDateInit, 100);
 			strategy = new GannSquare9StrategyImpl();
 			strategy.initializeSetup(cList);
 			break;

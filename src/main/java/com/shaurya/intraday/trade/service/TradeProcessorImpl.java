@@ -8,6 +8,7 @@ import static com.shaurya.intraday.util.HelperUtil.isIntradayClosingTime;
 import static com.shaurya.intraday.util.HelperUtil.rollDayOfYearByN;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -71,6 +72,7 @@ public class TradeProcessorImpl implements TradeProcessor {
 	public synchronized StrategyModel getTradeCall(Candle candle) {
 		System.out.println("candle data " + candle.toString());
 		try {
+			int numberOdTradesForDay = tradeService.fetchNumberOfTradesForTheDay();
 			StrategyModel openTrade = tradeService.fetchOpenTradeBySecurity(candle.getSecurity());
 			StrategyModel tradeCall = strategyMap.get(candle.getSecurity()).processTrades(candle, openTrade, true);
 
@@ -99,7 +101,7 @@ public class TradeProcessorImpl implements TradeProcessor {
 					tradeCall = (tradeCall = strategyMap.get(candle.getSecurity()).processTrades(candle, null,
 							false)) != null ? tradeCall : null;
 				}
-				if (tradeCall != null) {
+				if (tradeCall != null && numberOdTradesForDay < 2) {
 					switch (tradeCall.getPosition()) {
 					case LONG:
 						if (isPreferedPosition(tradeCall)
@@ -236,8 +238,7 @@ public class TradeProcessorImpl implements TradeProcessor {
 					strategyMap.put(e.getKey().getSecurity(), macdHistogram);
 					break;
 				case OPEN_HIGH_LOW:
-					cList = tradeService.getPrevDayCandles(e.getKey().getSecurityToken(), IntervalType.MINUTE_5,
-							rollDayOfYearByN(cal.getTime(), -4), cal.getTime(), 200);
+					cList = new ArrayList<>();
 					OpenHighLowStrategy ohl = new OpenHighLowStrategyImpl();
 					ohl.initializeSetup(cList);
 					strategyMap.put(e.getKey().getSecurity(), ohl);

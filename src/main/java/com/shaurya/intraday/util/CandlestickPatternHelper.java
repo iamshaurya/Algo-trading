@@ -182,6 +182,7 @@ public class CandlestickPatternHelper {
 	public static boolean tradableRange(Candle candle) {
 		double range = Math.abs(candle.getHigh() - candle.getLow());
 		double bodySize = Math.abs(candle.getClose() - candle.getOpen());
-		return /*(bodySize >= (0.5 * range)) && */(range >= (0.004 * candle.getClose()));
+		//return /*(bodySize >= (0.5 * range)) && */(range >= (0.004 * candle.getClose()));
+		return true;
 	}
 }

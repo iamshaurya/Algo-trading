@@ -40,7 +40,7 @@ public class OpenHighLowStrategyImpl implements OpenHighLowStrategy {
 				form30MinCandle();
 			}
 			if (current30Candle != null) {
-				return getTradeCall(current30Candle, openTrade);
+				return getTradeCall(candle, openTrade);
 			}
 		}
 		return null;

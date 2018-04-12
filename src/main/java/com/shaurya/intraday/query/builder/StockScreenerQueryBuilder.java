@@ -36,6 +36,12 @@ public class StockScreenerQueryBuilder {
 		sb.append("delete from prev_nse_volatility");
 		return sb.toString();
 	}
+	
+	public static String queryToFlushTradeStrategy() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("delete from trade_strategy");
+		return sb.toString();
+	}
 
 	// 0- unprocessed, 1-processed
 	public static CustomQueryHolder queryToFetchVolatileStock() {

@@ -15,6 +15,7 @@ import com.shaurya.intraday.entity.Trade;
 import com.shaurya.intraday.entity.TradeStrategy;
 import com.shaurya.intraday.entity.VolatileStock;
 import com.shaurya.intraday.enums.PositionType;
+import com.shaurya.intraday.enums.StrategyType;
 import com.shaurya.intraday.model.Candle;
 import com.shaurya.intraday.model.StrategyModel;
 import com.zerodhatech.models.HistoricalData;
@@ -87,13 +88,13 @@ public class TradeBuilder {
 
 	public static TradeStrategy convertStrategyModelToEntity(StrategyModel sm) {
 		TradeStrategy ts = new TradeStrategy();
-		ts.setDay(1);
+		ts.setDay(2);
 		ts.setMarginMultiplier(sm.getMarginMultiplier());
 		ts.setPreferedPosition((byte) sm.getPreferedPosition().getId());
 		ts.setSecurityName(sm.getSecurity());
 		ts.setSecurityToken(sm.getSecurityToken());
-		ts.setStrategyType(7);
-		ts.setMarginPortion((double) 2000);
+		ts.setStrategyType(StrategyType.OPEN_HIGH_LOW.getId());
+		ts.setMarginPortion((double) 5000);
 		return ts;
 	}
 

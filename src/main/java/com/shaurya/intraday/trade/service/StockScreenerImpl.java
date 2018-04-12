@@ -151,6 +151,7 @@ public class StockScreenerImpl implements StockScreener {
 	private void cleanUp() {
 		nsRepo.runNativeQueryForUpdate(StockScreenerQueryBuilder.queryToFlushStockList());
 		nsRepo.runNativeQueryForUpdate(StockScreenerQueryBuilder.queryToFlushVolatileStocks());
+		nsRepo.runNativeQueryForUpdate(StockScreenerQueryBuilder.queryToFlushTradeStrategy());
 	}
 
 	@Override
@@ -216,7 +217,7 @@ public class StockScreenerImpl implements StockScreener {
 				sm.setPreferedPosition(PositionType.BOTH);
 				sm.setSecurityToken(tokenNameMap.get(vs.getSymbol()));
 				if (sm != null) {
-					strategyMap.get(StrategyType.HEIKIN_ASHI_OHL).add(sm);
+					strategyMap.get(StrategyType.OPEN_HIGH_LOW).add(sm);
 				}
 				vs.setState((byte) 1);
 				vsRepo.update(vs);

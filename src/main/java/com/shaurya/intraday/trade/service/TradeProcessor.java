@@ -23,4 +23,6 @@ public interface TradeProcessor {
 	public void destroyStrategyMap();
 
 	public void updateNifty50Ltp(double ltp);
+
+	public void updateTopGainerLoser(double token, double ltp);
 }

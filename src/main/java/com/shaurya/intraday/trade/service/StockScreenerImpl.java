@@ -141,7 +141,7 @@ public class StockScreenerImpl implements StockScreener {
 			e.printStackTrace();
 		}
 
-		List<Object[]> objList = nsRepo.runNativeQuery(StockScreenerQueryBuilder.queryToFetchMostAnnualVolatileStocks());
+		List<Object[]> objList = nsRepo.runNativeQuery(StockScreenerQueryBuilder.queryToFetchNse100Stocks());
 		for (Object[] o : objList) {
 			finalStockList.add((String) o[0]);
 		}
@@ -206,18 +206,19 @@ public class StockScreenerImpl implements StockScreener {
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
-				/*List<Candle> cList = tradeService.getPrevDayCandles(tokenNameMap.get(vs.getSymbol()), IntervalType.DAY,
-						fromCal.getTime(), toCal.getTime(), 200);*/
-				if (strategyMap.get(StrategyType.OPEN_HIGH_LOW) == null) {
-					strategyMap.put(StrategyType.OPEN_HIGH_LOW, new ArrayList<>());
+				List<Candle> cList = tradeService.getPrevDayCandles(tokenNameMap.get(vs.getSymbol()), IntervalType.DAY,
+						fromCal.getTime(), toCal.getTime(), 200);
+				if (strategyMap.get(StrategyType.GANN_SQUARE_9) == null) {
+					strategyMap.put(StrategyType.GANN_SQUARE_9, new ArrayList<>());
 				}
 				StrategyModel sm  = new StrategyModel();
 				sm.setSecurity(vs.getSymbol());
-				sm.setMarginMultiplier(20.8);
+				sm.setMarginMultiplier(calculateEquityMargin(margins.get(vs.getSymbol()), cList.get(cList.size() - 1),
+						0.005 * cList.get(cList.size() - 1).getClose(), PositionType.LONG));
 				sm.setPreferedPosition(PositionType.BOTH);
 				sm.setSecurityToken(tokenNameMap.get(vs.getSymbol()));
 				if (sm != null) {
-					strategyMap.get(StrategyType.OPEN_HIGH_LOW).add(sm);
+					strategyMap.get(StrategyType.GANN_SQUARE_9).add(sm);
 				}
 				vs.setState((byte) 1);
 				vsRepo.update(vs);

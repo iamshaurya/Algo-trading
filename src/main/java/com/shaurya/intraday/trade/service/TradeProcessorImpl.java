@@ -6,6 +6,7 @@ package com.shaurya.intraday.trade.service;
 import static com.shaurya.intraday.util.HelperUtil.getTradeQuantity;
 import static com.shaurya.intraday.util.HelperUtil.isIntradayClosingTime;
 import static com.shaurya.intraday.util.HelperUtil.rollDayOfYearByN;
+import static com.shaurya.intraday.util.CandlestickPatternHelper.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -29,6 +30,7 @@ import com.shaurya.intraday.enums.StrategyType;
 import com.shaurya.intraday.enums.TradeExitReason;
 import com.shaurya.intraday.model.Candle;
 import com.shaurya.intraday.model.MailAccount;
+import com.shaurya.intraday.model.StockMovement;
 import com.shaurya.intraday.model.StrategyModel;
 import com.shaurya.intraday.strategy.EMAMacdAndRSIStrategy;
 import com.shaurya.intraday.strategy.EMAandRSIStrategy;
@@ -60,6 +62,8 @@ import com.zerodhatech.kiteconnect.kitehttp.exceptions.KiteException;
 public class TradeProcessorImpl implements TradeProcessor {
 	private Map<String, Strategy> strategyMap;
 	private Map<String, StrategyModel> metadatMap;
+	private List<StockMovement> topGainer;
+	private List<StockMovement> topLoser;
 	private Candle nifty50Candle;
 	@Autowired
 	private TradeService tradeService;
@@ -101,11 +105,10 @@ public class TradeProcessorImpl implements TradeProcessor {
 					tradeCall = (tradeCall = strategyMap.get(candle.getSecurity()).processTrades(candle, null,
 							false)) != null ? tradeCall : null;
 				}
-				if (tradeCall != null && numberOdTradesForDay < 2) {
+				if (tradeCall != null && numberOdTradesForDay < 4) {
 					switch (tradeCall.getPosition()) {
 					case LONG:
-						if (isPreferedPosition(tradeCall)
-						/* && isNifty50Uptrend(nifty50Candle) */) {
+						if (isPreferedPosition(tradeCall) && greenCandle(nifty50Candle) && topGainerStock(tradeCall)) {
 							// make call for long cover order
 							tradeCall.setQuantity(getTradeQuantity(
 									metadatMap.get(tradeCall.getSecurity()).getTradeMargin(), tradeCall.getTradePrice(),
@@ -131,8 +134,7 @@ public class TradeProcessorImpl implements TradeProcessor {
 						}
 						break;
 					case SHORT:
-						if (isPreferedPosition(tradeCall)
-						/* && isNifty50Downtrend(nifty50Candle) */) {
+						if (isPreferedPosition(tradeCall) && redCandle(nifty50Candle) && topLoserStock(tradeCall)) {
 							// make call for short cover order
 							tradeCall.setQuantity(getTradeQuantity(
 									metadatMap.get(tradeCall.getSecurity()).getTradeMargin(), tradeCall.getTradePrice(),
@@ -199,16 +201,27 @@ public class TradeProcessorImpl implements TradeProcessor {
 		}
 		return null;
 	}
+	
+	private boolean topGainerStock(StrategyModel tradeCall) {
+		StockMovement aux = new StockMovement(tradeCall.getSecurity(), tradeCall.getSecurityToken(), 0, 0);
+		return topGainer.contains(aux) && (topGainer.indexOf(aux) < 10);
+	}
+	
+	private boolean topLoserStock(StrategyModel tradeCall){
+		StockMovement aux = new StockMovement(tradeCall.getSecurity(), tradeCall.getSecurityToken(), 0, 0);
+		return topLoser.contains(aux) && (topLoser.indexOf(aux) < 10);
+	}
 
 	@Override
 	public void initializeStrategyMap() throws IOException, KiteException, JSONException {
 		Calendar cal = Calendar.getInstance();
 		strategyMap = new HashMap<>();
 		metadatMap = new HashMap<>();
+		topGainer = new ArrayList<>();
+		topLoser = new ArrayList<>();
 		Map<StrategyModel, StrategyType> strategyTypeMap = tradeService.getTradeStrategy();
 		for (Entry<StrategyModel, StrategyType> e : strategyTypeMap.entrySet()) {
 			try{
-
 				List<Candle> cList = null;
 				e.getKey().setTradeMargin(e.getKey().getMarginPortion());
 				switch (e.getValue()) {
@@ -263,6 +276,11 @@ public class TradeProcessorImpl implements TradeProcessor {
 					GannSquare9Strategy gann = new GannSquare9StrategyImpl();
 					gann.initializeSetup(cList);
 					strategyMap.put(e.getKey().getSecurity(), gann);
+					double ltp = cList.get(cList.size() - 1).getClose();
+					if(ltp <= 1500){
+						topGainer.add(new StockMovement(e.getKey().getSecurity(), e.getKey().getSecurityToken(), ltp, ltp));
+						topLoser.add(new StockMovement(e.getKey().getSecurity(), e.getKey().getSecurityToken(), ltp, ltp));
+					}
 					break;
 				default:
 					break;
@@ -281,11 +299,11 @@ public class TradeProcessorImpl implements TradeProcessor {
 
 	private void initializeNifty50Candle() throws IOException, KiteException {
 		Calendar cal = Calendar.getInstance();
-		List<Candle> niftyClist = tradeService.getPrevDayCandles(256265l, IntervalType.DAY,
+		/*List<Candle> niftyClist = tradeService.getPrevDayCandles(256265l, IntervalType.DAY,
 				rollDayOfYearByN(cal.getTime(), -1), cal.getTime(), 1);
 		Collections.sort(niftyClist);
-		Candle auxC = niftyClist.get(niftyClist.size() - 1);
-		nifty50Candle = new Candle("Nifty 50", new Date(), auxC.getClose(), 0, 0, 0, 0);
+		Candle auxC = niftyClist.get(niftyClist.size() - 1);*/
+		nifty50Candle = new Candle("Nifty 50", new Date(), 0, 0, 0, 0, 0);
 		System.out.println("Nifty 50 :: last day closing :: " + nifty50Candle.getOpen());
 	}
 
@@ -295,6 +313,20 @@ public class TradeProcessorImpl implements TradeProcessor {
 			this.nifty50Candle.setOpen(ltp);
 		} else {
 			this.nifty50Candle.setClose(ltp);
+		}
+	}
+	
+	@Override
+	public synchronized void updateTopGainerLoser(double token, double ltp){
+		StockMovement aux = new StockMovement("", token, ltp, ltp);
+		if(topGainer.contains(aux)){
+			topGainer.get(topGainer.indexOf(aux)).updateLtp(ltp);
+			Collections.sort(topGainer);
+		}
+		if(topLoser.contains(aux)){
+			topLoser.get(topLoser.indexOf(aux)).updateLtp(ltp);
+			Collections.sort(topLoser);
+			Collections.reverse(topLoser);
 		}
 	}
 
@@ -308,6 +340,8 @@ public class TradeProcessorImpl implements TradeProcessor {
 		}
 		metadatMap = null;
 		nifty50Candle = null;
+		topGainer = null;
+		topLoser = null;
 	}
 
 }

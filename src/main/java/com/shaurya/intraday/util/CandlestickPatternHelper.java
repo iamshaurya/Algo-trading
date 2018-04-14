@@ -12,12 +12,9 @@ import com.shaurya.intraday.model.Candle;
 public class CandlestickPatternHelper {
 	public static boolean twoWhiteSoilder(Candle prevCandle, Candle candle) {
 		boolean twoWhiteSoilder = false;
-		boolean prevCandleDoji = dojiOrSpininTop(prevCandle);
-		boolean currentCandleDoji = dojiOrSpininTop(candle);
-		boolean prevCandleTradable = tradableRange(prevCandle);
-		boolean currentCandleTradable = tradableRange(candle);
-		if (!prevCandleDoji && !currentCandleDoji && prevCandleTradable && currentCandleTradable
-				&& greenCandle(prevCandle) && greenCandle(candle) && (candle.getClose() > prevCandle.getClose())) {
+		boolean prevCandleStrong = strongBullish(prevCandle);
+		boolean currentCandleStrong = strongBullish(candle);
+		if (prevCandleStrong && currentCandleStrong && (candle.getClose() > prevCandle.getClose())) {
 			twoWhiteSoilder = true;
 		}
 		return twoWhiteSoilder;
@@ -25,12 +22,9 @@ public class CandlestickPatternHelper {
 
 	public static boolean twoBlackCrows(Candle prevCandle, Candle candle) {
 		boolean twoBlackCrows = false;
-		boolean prevCandleDoji = dojiOrSpininTop(prevCandle);
-		boolean currentCandleDoji = dojiOrSpininTop(candle);
-		boolean prevCandleTradable = tradableRange(prevCandle);
-		boolean currentCandleTradable = tradableRange(candle);
-		if (!prevCandleDoji && !currentCandleDoji && prevCandleTradable && currentCandleTradable
-				&& redCandle(prevCandle) && redCandle(candle) && (candle.getClose() < prevCandle.getClose())) {
+		boolean prevCandleStrong = strongBearish(prevCandle);
+		boolean currentCandleStrong = strongBearish(candle);
+		if (prevCandleStrong && currentCandleStrong && (candle.getClose() < prevCandle.getClose())) {
 			twoBlackCrows = true;
 		}
 		return twoBlackCrows;
@@ -38,15 +32,32 @@ public class CandlestickPatternHelper {
 
 	public static boolean bullishMarubozu(Candle candle) {
 		boolean marubozu = false;
-		if ((candle.getOpen() == candle.getLow()) && !dojiOrSpininTop(candle) && tradableRange(candle)) {
+		if (((candle.getOpen() == candle.getLow()) && !dojiOrSpininTop(candle) && tradableRange(candle))
+				|| (strongBullish(candle))) {
 			marubozu = true;
 		}
 		return marubozu;
 	}
+	
+	public static boolean strongBullish(Candle candle) {
+		double range = Math.abs(candle.getHigh() - candle.getLow());
+		double bodySize = Math.abs(candle.getClose() - candle.getOpen());
+		return (candle.getOpen() < candle.getClose()) && (bodySize >= (0.7 * range))
+				&& (range >= (0.005 * candle.getClose()));
+	}
+	
+	public static boolean strongBearish(Candle candle) {
+		double range = Math.abs(candle.getHigh() - candle.getLow());
+		double bodySize = Math.abs(candle.getClose() - candle.getOpen());
+		return (candle.getOpen() > candle.getClose()) && (bodySize >= (0.7 * range))
+				&& (range >= (0.005 * candle.getClose()));
+
+	}
 
 	public static boolean bearishMarubozu(Candle candle) {
 		boolean marubozu = false;
-		if ((candle.getOpen() == candle.getHigh()) && !dojiOrSpininTop(candle) && tradableRange(candle)) {
+		if (((candle.getOpen() == candle.getHigh()) && !dojiOrSpininTop(candle) && tradableRange(candle))
+				|| (strongBearish(candle))) {
 			marubozu = true;
 		}
 		return marubozu;
@@ -76,12 +87,11 @@ public class CandlestickPatternHelper {
 
 	public static boolean bullishEngulfing(Candle prevCanle, Candle candle) {
 		boolean bullishEngulfing = false;
-		boolean prevCandleDoji = dojiOrSpininTop(prevCanle);
 		boolean currentCandleDoji = dojiOrSpininTop(candle);
 		boolean prevCandleBearish = redCandle(prevCanle);
 		boolean currentCandleBullish = greenCandle(candle);
-		if (!prevCandleDoji && !currentCandleDoji && prevCandleBearish && currentCandleBullish
-				&& (candle.getOpen() < prevCanle.getClose()) && (candle.getClose() > prevCanle.getOpen())
+		if (!currentCandleDoji && prevCandleBearish && currentCandleBullish
+				&& (candle.getOpen() <= prevCanle.getClose()) && (candle.getClose() > prevCanle.getOpen())
 				&& tradableRange(candle)) {
 			bullishEngulfing = true;
 		}
@@ -90,12 +100,11 @@ public class CandlestickPatternHelper {
 
 	public static boolean bearishEngulfing(Candle prevCanle, Candle candle) {
 		boolean bearishEngulfing = false;
-		boolean prevCandleDoji = dojiOrSpininTop(prevCanle);
 		boolean currentCandleDoji = dojiOrSpininTop(candle);
 		boolean prevCandleBullish = greenCandle(prevCanle);
 		boolean currentCandleBearish = redCandle(candle);
-		if (!prevCandleDoji && !currentCandleDoji && prevCandleBullish && currentCandleBearish
-				&& (candle.getOpen() > prevCanle.getClose()) && (candle.getClose() < prevCanle.getOpen())
+		if (!currentCandleDoji && prevCandleBullish && currentCandleBearish
+				&& (candle.getOpen() >= prevCanle.getClose()) && (candle.getClose() < prevCanle.getOpen())
 				&& tradableRange(candle)) {
 			bearishEngulfing = true;
 		}
@@ -182,7 +191,6 @@ public class CandlestickPatternHelper {
 	public static boolean tradableRange(Candle candle) {
 		double range = Math.abs(candle.getHigh() - candle.getLow());
 		double bodySize = Math.abs(candle.getClose() - candle.getOpen());
-		//return /*(bodySize >= (0.5 * range)) && */(range >= (0.004 * candle.getClose()));
-		return true;
+		return (bodySize >= (0.6 * range)) && (range >= (0.003 * candle.getClose()));
 	}
 }

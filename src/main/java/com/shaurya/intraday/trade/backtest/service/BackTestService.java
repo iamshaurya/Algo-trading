@@ -30,6 +30,7 @@ import com.shaurya.intraday.model.MailAccount;
 import com.shaurya.intraday.model.StrategyModel;
 import com.shaurya.intraday.strategy.Strategy;
 import com.shaurya.intraday.strategy.impl.EMAMacdAndRSIStrategyImpl;
+import com.shaurya.intraday.strategy.impl.EMAandRSIStrategyImpl;
 import com.shaurya.intraday.strategy.impl.GannSquare9StrategyImpl;
 import com.shaurya.intraday.strategy.impl.HeikinAshiOHLStrategyImpl;
 import com.shaurya.intraday.strategy.impl.OpenHighLowStrategyImpl;
@@ -157,6 +158,12 @@ public class BackTestService {
 		List<Candle> niftyClist = null;
 		List<Candle> cList = null;
 		switch (strategyType) {
+		case EMA_RSI:
+			niftyClist = new ArrayList<>();
+			cList = tradeService.getPrevDayCandles(token, IntervalType.MINUTE_15, fromDate, toDateInit,200);
+			strategy = new EMAandRSIStrategyImpl();
+			strategy.initializeSetup(cList);
+			break;
 		case MACD_RSI:
 			niftyClist = new ArrayList<>();
 			cList = tradeService.getPrevDayCandles(token, IntervalType.MINUTE_5, fromDate, toDateInit,200);
@@ -165,7 +172,7 @@ public class BackTestService {
 			break;
 		case OPEN_HIGH_LOW:
 			niftyClist = new ArrayList<>();
-			cList = tradeService.getPrevDayCandles(token, IntervalType.MINUTE_5, fromDate, toDateInit, 200);
+			cList = new ArrayList<>();
 			strategy = new OpenHighLowStrategyImpl();
 			strategy.initializeSetup(cList);
 			break;
@@ -183,7 +190,7 @@ public class BackTestService {
 			break;
 		case GANN_SQUARE_9:
 			niftyClist = new ArrayList<>();
-			cList = tradeService.getPrevDayCandles(token, IntervalType.MINUTE_5, fromDate, toDateInit, 100);
+			cList = tradeService.getPrevDayCandles(token, IntervalType.MINUTE_15, fromDate, toDateInit, 100);
 			strategy = new GannSquare9StrategyImpl();
 			strategy.initializeSetup(cList);
 			break;

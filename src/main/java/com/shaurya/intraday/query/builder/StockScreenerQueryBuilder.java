@@ -24,6 +24,15 @@ public class StockScreenerQueryBuilder {
 		cq.setInParamMap(new HashMap<>());
 		return cq;
 	}
+	
+	public static CustomQueryHolder queryToFetchNse100Stocks() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("select nse_100.symbol, nse_100.id from nse_100");
+		CustomQueryHolder cq = new CustomQueryHolder();
+		cq.setQueryString(sb.toString());
+		cq.setInParamMap(new HashMap<>());
+		return cq;
+	}
 
 	public static String queryToFlushStockList() {
 		StringBuilder sb = new StringBuilder();

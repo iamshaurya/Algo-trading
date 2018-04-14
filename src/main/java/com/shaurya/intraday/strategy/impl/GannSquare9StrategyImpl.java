@@ -101,12 +101,12 @@ public class GannSquare9StrategyImpl implements GannSquare9Strategy {
 		if (openTrade == null && levels != null && !dayTradeDone) {
 			if (reversalNearSupport(candle) || bullishBreakout(candle)) {
 				dayTradeDone = true;
-				tradeCall = new StrategyModel(PositionType.LONG, 0.0025*candle.getClose(), candle.getClose(),
+				tradeCall = new StrategyModel(PositionType.LONG, 0.0015*candle.getClose(), candle.getClose(),
 						candle.getSecurity(), null, 0, false);
 			}
 			if (reversalNearResistance(candle) || bearishBreakout(candle)) {
 				dayTradeDone = true;
-				tradeCall = new StrategyModel(PositionType.SHORT, 0.0025*candle.getClose(), candle.getClose(),
+				tradeCall = new StrategyModel(PositionType.SHORT, 0.0015*candle.getClose(), candle.getClose(),
 						candle.getSecurity(), null, 0, false);
 			}
 		} else if (openTrade != null) {
@@ -149,9 +149,9 @@ public class GannSquare9StrategyImpl implements GannSquare9Strategy {
 	private boolean takeProfitReached(Candle candle, StrategyModel openTrade) {
 		switch (openTrade.getPosition()) {
 		case LONG:
-			return candle.getClose() >= (0.9995 * 1.01 * openTrade.getTradePrice());
+			return candle.getClose() >= (1.005 * openTrade.getTradePrice());
 		case SHORT:
-			return candle.getClose() <= (1.0005 * 0.99 * openTrade.getTradePrice());
+			return candle.getClose() <= (0.995 * openTrade.getTradePrice());
 		default:
 			break;
 		}

@@ -120,21 +120,21 @@ public class StockScreenerImpl implements StockScreener {
 		SimpleDateFormat sdf = new SimpleDateFormat("ddMMyyyy");
 		dvUrl = dvUrl.replaceFirst("DATE", sdf.format(new Date()));
 		List<NseStock> stocks = null;
-		List<DailyVolatility> volatileStocks = null;
+		//List<DailyVolatility> volatileStocks = null;
 		File stockFile;
-		File dailyVolatilityFile = null;
+		//File dailyVolatilityFile = null;
 		try {
 			stockFile = WebHelperUtil.downloadCSV(stockListUrl, new ArrayList<>());
-			dailyVolatilityFile = WebHelperUtil.downloadCSV(dvUrl, new ArrayList<>());
-			if (stockFile != null && dailyVolatilityFile != null) {
+			//dailyVolatilityFile = WebHelperUtil.downloadCSV(dvUrl, new ArrayList<>());
+			if (stockFile != null/* && dailyVolatilityFile != null*/) {
 				stocks = parseCsvFileIntoStockList(stockFile);
-				volatileStocks = parseCsvFileIntoVolatileStockList(dailyVolatilityFile);
+				//volatileStocks = parseCsvFileIntoVolatileStockList(dailyVolatilityFile);
 				for (NseStock ns : stocks) {
 					nsRepo.update(ns);
 				}
-				for (DailyVolatility dv : volatileStocks) {
+				/*for (DailyVolatility dv : volatileStocks) {
 					dvRepo.update(dv);
-				}
+				}*/
 			}
 		} catch (ParseException | IOException e) {
 			// TODO Auto-generated catch block
@@ -206,22 +206,24 @@ public class StockScreenerImpl implements StockScreener {
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
-				List<Candle> cList = tradeService.getPrevDayCandles(tokenNameMap.get(vs.getSymbol()), IntervalType.DAY,
-						fromCal.getTime(), toCal.getTime(), 200);
-				if (strategyMap.get(StrategyType.GANN_SQUARE_9) == null) {
-					strategyMap.put(StrategyType.GANN_SQUARE_9, new ArrayList<>());
+				if(margins.get(vs.getSymbol()) != null){
+					List<Candle> cList = tradeService.getPrevDayCandles(tokenNameMap.get(vs.getSymbol()), IntervalType.DAY,
+							fromCal.getTime(), toCal.getTime(), 20);
+					if (strategyMap.get(StrategyType.GANN_SQUARE_9) == null) {
+						strategyMap.put(StrategyType.GANN_SQUARE_9, new ArrayList<>());
+					}
+					StrategyModel sm  = new StrategyModel();
+					sm.setSecurity(vs.getSymbol());
+					sm.setMarginMultiplier(calculateEquityMargin(margins.get(vs.getSymbol()), cList.get(cList.size() - 1),
+							0.005 * cList.get(cList.size() - 1).getClose(), PositionType.LONG));
+					sm.setPreferedPosition(PositionType.BOTH);
+					sm.setSecurityToken(tokenNameMap.get(vs.getSymbol()));
+					if (sm != null) {
+						strategyMap.get(StrategyType.GANN_SQUARE_9).add(sm);
+					}
+					vs.setState((byte) 1);
+					vsRepo.update(vs);
 				}
-				StrategyModel sm  = new StrategyModel();
-				sm.setSecurity(vs.getSymbol());
-				sm.setMarginMultiplier(calculateEquityMargin(margins.get(vs.getSymbol()), cList.get(cList.size() - 1),
-						0.005 * cList.get(cList.size() - 1).getClose(), PositionType.LONG));
-				sm.setPreferedPosition(PositionType.BOTH);
-				sm.setSecurityToken(tokenNameMap.get(vs.getSymbol()));
-				if (sm != null) {
-					strategyMap.get(StrategyType.GANN_SQUARE_9).add(sm);
-				}
-				vs.setState((byte) 1);
-				vsRepo.update(vs);
 			}
 		}
 

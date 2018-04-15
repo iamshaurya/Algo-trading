@@ -101,9 +101,9 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
 	private boolean takeProfitReached(Candle candle, StrategyModel openTrade) {
 		switch (openTrade.getPosition()) {
 		case LONG:
-			return candle.getClose() >= (1.005 * openTrade.getTradePrice());
+			return candle.getClose() >= (1.005 * 0.999 * openTrade.getTradePrice());
 		case SHORT:
-			return candle.getClose() <= (0.995 * openTrade.getTradePrice());
+			return candle.getClose() <= (0.995 * 1.001 *openTrade.getTradePrice());
 		default:
 			break;
 		}

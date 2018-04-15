@@ -304,11 +304,11 @@ public class TradeProcessorImpl implements TradeProcessor {
 
 	private void initializeNifty50Candle() throws IOException, KiteException {
 		Calendar cal = Calendar.getInstance();
-		/*List<Candle> niftyClist = tradeService.getPrevDayCandles(256265l, IntervalType.DAY,
+		List<Candle> niftyClist = tradeService.getPrevDayCandles(256265l, IntervalType.DAY,
 				rollDayOfYearByN(cal.getTime(), -1), cal.getTime(), 1);
 		Collections.sort(niftyClist);
-		Candle auxC = niftyClist.get(niftyClist.size() - 1);*/
-		nifty50Candle = new Candle("Nifty 50", new Date(), 0, 0, 0, 0, 0);
+		Candle auxC = niftyClist.get(niftyClist.size() - 1);
+		nifty50Candle = new Candle("Nifty 50", new Date(), auxC.getClose(), 0, 0, 0, 0);
 		System.out.println("Nifty 50 :: last day closing :: " + nifty50Candle.getOpen());
 	}
 

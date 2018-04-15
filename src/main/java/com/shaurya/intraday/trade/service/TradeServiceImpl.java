@@ -240,7 +240,7 @@ public class TradeServiceImpl implements TradeService {
 		try {
 			List<HistoricalData> hd;
 			do {
-				Thread.sleep(2000);
+				Thread.sleep(500);
 				hd = loginService.getSdkClient().getHistoricalData(from, to, instrumentToken.toString(),
 						interval.getDesc(), false).dataArrayList;
 				from = getPrevTradingDate(from);

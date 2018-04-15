@@ -23,4 +23,6 @@ public interface StockScreener {
 	public void updateStrategyStocks();
 
 	public List<String> fetchTopAnnualVolatileStock();
+
+	List<String> fetchTopAnnualVolatileStockForBacktest();
 }

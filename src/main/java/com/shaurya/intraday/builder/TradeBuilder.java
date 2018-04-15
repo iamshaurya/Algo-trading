@@ -93,7 +93,7 @@ public class TradeBuilder {
 		ts.setPreferedPosition((byte) sm.getPreferedPosition().getId());
 		ts.setSecurityName(sm.getSecurity());
 		ts.setSecurityToken(sm.getSecurityToken());
-		ts.setStrategyType(StrategyType.GANN_SQUARE_9.getId());
+		ts.setStrategyType(StrategyType.OPENING_RANGE_BREAKOUT.getId());
 		ts.setMarginPortion((double) 2000);
 		return ts;
 	}

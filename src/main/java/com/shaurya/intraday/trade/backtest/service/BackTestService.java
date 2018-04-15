@@ -64,7 +64,7 @@ public class BackTestService {
 			throws IOException, KiteException, InterruptedException {
 		int itrCount = duration/30;
 		resultMap = new HashMap<String, List<BacktestResult>>();
-		List<String> stocks = stockScreener.fetchTopAnnualVolatileStock();
+		List<String> stocks = stockScreener.fetchTopAnnualVolatileStockForBacktest();
 		for (String s : stocks) {
 			try {
 				backtest(position, strategyType, s, quantity, duration);
@@ -190,7 +190,7 @@ public class BackTestService {
 			break;
 		case GANN_SQUARE_9:
 			niftyClist = new ArrayList<>();
-			cList = tradeService.getPrevDayCandles(token, IntervalType.MINUTE_15, fromDate, toDateInit, 100);
+			cList = tradeService.getPrevDayCandles(token, IntervalType.MINUTE_15, fromDate, toDateInit, 20);
 			strategy = new GannSquare9StrategyImpl();
 			strategy.initializeSetup(cList);
 			break;

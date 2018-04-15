@@ -264,11 +264,16 @@ public class TradeProcessorImpl implements TradeProcessor {
 					strategyMap.put(e.getKey().getSecurity(), haOhl);
 					break;
 				case OPENING_RANGE_BREAKOUT:
-					cList = tradeService.getPrevDayCandles(e.getKey().getSecurityToken(), IntervalType.MINUTE_5,
-							rollDayOfYearByN(cal.getTime(), -4), cal.getTime(), 200);
+					cList = tradeService.getPrevDayCandles(e.getKey().getSecurityToken(), IntervalType.DAY,
+							rollDayOfYearByN(cal.getTime(), -4), cal.getTime(), 2);
 					OpeningRangeBreakoutStrategy orb = new OpeningRangeBreakoutStrategyImpl();
 					orb.initializeSetup(cList);
 					strategyMap.put(e.getKey().getSecurity(), orb);
+					double orbLtp = cList.get(cList.size() - 1).getClose();
+					if(orbLtp <= 1500){
+						topGainer.add(new StockMovement(e.getKey().getSecurity(), e.getKey().getSecurityToken(), orbLtp, orbLtp));
+						topLoser.add(new StockMovement(e.getKey().getSecurity(), e.getKey().getSecurityToken(), orbLtp, orbLtp));
+					}
 					break;
 				case GANN_SQUARE_9:
 					cList = tradeService.getPrevDayCandles(e.getKey().getSecurityToken(), IntervalType.MINUTE_15,
@@ -276,10 +281,10 @@ public class TradeProcessorImpl implements TradeProcessor {
 					GannSquare9Strategy gann = new GannSquare9StrategyImpl();
 					gann.initializeSetup(cList);
 					strategyMap.put(e.getKey().getSecurity(), gann);
-					double ltp = cList.get(cList.size() - 1).getClose();
-					if(ltp <= 1500){
-						topGainer.add(new StockMovement(e.getKey().getSecurity(), e.getKey().getSecurityToken(), ltp, ltp));
-						topLoser.add(new StockMovement(e.getKey().getSecurity(), e.getKey().getSecurityToken(), ltp, ltp));
+					double gannLtp = cList.get(cList.size() - 1).getClose();
+					if(gannLtp <= 1500){
+						topGainer.add(new StockMovement(e.getKey().getSecurity(), e.getKey().getSecurityToken(), gannLtp, gannLtp));
+						topLoser.add(new StockMovement(e.getKey().getSecurity(), e.getKey().getSecurityToken(), gannLtp, gannLtp));
 					}
 					break;
 				default:

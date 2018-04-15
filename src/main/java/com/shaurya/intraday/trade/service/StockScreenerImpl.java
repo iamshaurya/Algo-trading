@@ -147,6 +147,42 @@ public class StockScreenerImpl implements StockScreener {
 		}
 		return finalStockList;
 	}
+	
+	@Override
+	public List<String> fetchTopAnnualVolatileStockForBacktest() {
+		cleanUp();
+		List<String> finalStockList = new ArrayList<>();
+		String dvUrl = new String(dailyVolatilityUrl);
+		SimpleDateFormat sdf = new SimpleDateFormat("ddMMyyyy");
+		dvUrl = dvUrl.replaceFirst("DATE", sdf.format(new Date()));
+		List<NseStock> stocks = null;
+		List<DailyVolatility> volatileStocks = null;
+		File stockFile;
+		File dailyVolatilityFile = null;
+		try {
+			stockFile = WebHelperUtil.downloadCSV(stockListUrl, new ArrayList<>());
+			dailyVolatilityFile = WebHelperUtil.downloadCSV(dvUrl, new ArrayList<>());
+			if (stockFile != null && dailyVolatilityFile != null) {
+				stocks = parseCsvFileIntoStockList(stockFile);
+				volatileStocks = parseCsvFileIntoVolatileStockList(dailyVolatilityFile);
+				for (NseStock ns : stocks) {
+					nsRepo.update(ns);
+				}
+				for (DailyVolatility dv : volatileStocks) {
+					dvRepo.update(dv);
+				}
+			}
+		} catch (ParseException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		List<Object[]> objList = nsRepo.runNativeQuery(StockScreenerQueryBuilder.queryToFetchMostAnnualVolatileStocks());
+		for (Object[] o : objList) {
+			finalStockList.add((String) o[0]);
+		}
+		return finalStockList;
+	}
 
 	private void cleanUp() {
 		nsRepo.runNativeQueryForUpdate(StockScreenerQueryBuilder.queryToFlushStockList());
@@ -209,8 +245,8 @@ public class StockScreenerImpl implements StockScreener {
 				if(margins.get(vs.getSymbol()) != null){
 					List<Candle> cList = tradeService.getPrevDayCandles(tokenNameMap.get(vs.getSymbol()), IntervalType.DAY,
 							fromCal.getTime(), toCal.getTime(), 20);
-					if (strategyMap.get(StrategyType.GANN_SQUARE_9) == null) {
-						strategyMap.put(StrategyType.GANN_SQUARE_9, new ArrayList<>());
+					if (strategyMap.get(StrategyType.OPENING_RANGE_BREAKOUT) == null) {
+						strategyMap.put(StrategyType.OPENING_RANGE_BREAKOUT, new ArrayList<>());
 					}
 					StrategyModel sm  = new StrategyModel();
 					sm.setSecurity(vs.getSymbol());
@@ -219,7 +255,7 @@ public class StockScreenerImpl implements StockScreener {
 					sm.setPreferedPosition(PositionType.BOTH);
 					sm.setSecurityToken(tokenNameMap.get(vs.getSymbol()));
 					if (sm != null) {
-						strategyMap.get(StrategyType.GANN_SQUARE_9).add(sm);
+						strategyMap.get(StrategyType.OPENING_RANGE_BREAKOUT).add(sm);
 					}
 					vs.setState((byte) 1);
 					vsRepo.update(vs);

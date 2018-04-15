@@ -98,7 +98,7 @@ public class GannSquare9StrategyImpl implements GannSquare9Strategy {
 
 	private StrategyModel getTradeCall(Candle candle, StrategyModel openTrade) {
 		StrategyModel tradeCall = null;
-		if (openTrade == null && levels != null && !dayTradeDone) {
+		if (openTrade == null && levels != null /*&& !dayTradeDone*/) {
 			if (reversalNearSupport(candle) || bullishBreakout(candle)) {
 				dayTradeDone = true;
 				tradeCall = new StrategyModel(PositionType.LONG, 0.0015*candle.getClose(), candle.getClose(),
@@ -112,10 +112,10 @@ public class GannSquare9StrategyImpl implements GannSquare9Strategy {
 		} else if (openTrade != null) {
 			// always check for stop loss hit before exiting trade and update
 			// reason in db
-			if (takeProfitReached(candle, openTrade)) {
+			/*if (takeProfitReached(candle, openTrade)) {
 				tradeCall = new StrategyModel(openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
 						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
-			}
+			}*/
 			/*if(movedTowardsTarget(openTrade, candle)){
 				openTrade.trailSl(getTrailingStopLossNew(openTrade, candle));
 			}*/
@@ -473,7 +473,7 @@ public class GannSquare9StrategyImpl implements GannSquare9Strategy {
 				double resistanceVal = auxList.get(index + 1).getValue();
 				breakout = prevCandle.getClose() <= resistanceVal && candle.getClose() > (1.001 * resistanceVal)
 						&& (candle.getClose() > prevCandle.getOpen());
-				greenCandle = (candle.getClose() > candle.getOpen()) && (prevCandle.getClose() > prevCandle.getOpen());
+				greenCandle = (candle.getClose() > candle.getOpen());
 			}
 		}
 		return breakout && greenCandle && !CandlestickPatternHelper.dojiOrSpininTop(candle)
@@ -493,7 +493,7 @@ public class GannSquare9StrategyImpl implements GannSquare9Strategy {
 				double supportVal = auxList.get(index - 1).getValue();
 				breakout = prevCandle.getClose() >= supportVal && candle.getClose() < (0.999 * supportVal)
 						&& (candle.getClose() < prevCandle.getOpen());
-				redCandle = (candle.getClose() < candle.getOpen()) && (prevCandle.getClose() < prevCandle.getOpen());
+				redCandle = (candle.getClose() < candle.getOpen());
 			}
 		}
 		return breakout && redCandle && !CandlestickPatternHelper.dojiOrSpininTop(candle)
@@ -504,6 +504,7 @@ public class GannSquare9StrategyImpl implements GannSquare9Strategy {
 	public void initializeSetup(List<Candle> cList) {
 		candle15Set = new TreeSet<>();
 		prevDayCandleSet = new TreeSet<>();
+		prevCandle = cList.get(cList.size()-1);
 		// TODO:
 		List<Candle> lastDayCandles = cList.subList(cList.size() - 25, cList.size());
 		Collections.sort(lastDayCandles);
@@ -550,13 +551,14 @@ public class GannSquare9StrategyImpl implements GannSquare9Strategy {
 
 	@Override
 	public void destroySetup() {
-		candle15Set = null;
+		/*candle15Set = null;
 		prevDayCandleSet = null;
 		nextLevelsCalTime = null;
-		prevCandle = null;
+		prevCandle = null;*/
 		levels = null;
-		/*candle15Set.clear();
-		prevDayCandleSet.clear();*/
+		candle15Set.clear();
+		prevDayCandleSet.clear();
+		dayTradeDone = false;
 
 	}
 

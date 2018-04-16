@@ -147,12 +147,13 @@ public class LiveTickerServiceImpl implements LiveTickerService {
 			}
 
 			private void initialiseBlankLiveCandle(Map<Long, LiveTickCandle> stockMap, Tick t) {
-				stockMap.put(t.getInstrumentToken(), new LiveTickCandle(0, nameTokenMap.get(t), t.getTickTimestamp()));
+				stockMap.put(t.getInstrumentToken(),
+						new LiveTickCandle(0, nameTokenMap.get(t), t.getInstrumentToken(), t.getTickTimestamp()));
 			}
 
 			private void initialiseNewLiveCandle(Map<Long, LiveTickCandle> stockMap, Tick t) {
 				stockMap.put(t.getInstrumentToken(), new LiveTickCandle(t.getLastTradedPrice(),
-						nameTokenMap.get(t.getInstrumentToken()), t.getTickTimestamp()));
+						nameTokenMap.get(t.getInstrumentToken()), t.getInstrumentToken(), t.getTickTimestamp()));
 			}
 		});
 		
@@ -205,7 +206,7 @@ public class LiveTickerServiceImpl implements LiveTickerService {
 		System.out.println("subscribing for trade :: " + tokens.toString());
 		tradeStock = new HashMap<Long, LiveTickCandle>();
 		for (Long t : tokens) {
-			tradeStock.put(t, new LiveTickCandle(0, nameTokenMap.get(t), HelperUtil.getDayStartTime().getTime()));
+			tradeStock.put(t, new LiveTickCandle(0, nameTokenMap.get(t), t, HelperUtil.getDayStartTime().getTime()));
 		}
 		tokens.add(256265l); // adding nifty 50 token
 		tickerProvider.subscribe(tokens);
@@ -217,7 +218,7 @@ public class LiveTickerServiceImpl implements LiveTickerService {
 		System.out.println("subscribing for monitor :: " + tokens.toString());
 		monitorStock = new HashMap<Long, LiveTickCandle>();
 		for (Long t : tokens) {
-			monitorStock.put(t, new LiveTickCandle(0, nameTokenMap.get(t), HelperUtil.getNoonTime().getTime()));
+			monitorStock.put(t, new LiveTickCandle(0, nameTokenMap.get(t), t, HelperUtil.getNoonTime().getTime()));
 		}
 		tickerProvider.subscribe(tokens);
 		tickerProvider.setMode(tokens, KiteTicker.modeLTP);

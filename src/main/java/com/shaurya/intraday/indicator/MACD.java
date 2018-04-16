@@ -41,7 +41,7 @@ public class MACD {
 		double macd = (double) fastEMAValue - slowEMAValue;
 		int signalPeriod = (int) Math.ceil(0.75 * fastEMATimePeriod);
 		double signal = EMA.calculateEMA(signalPeriod,
-				new Candle(candle.getSecurity(), candle.getTime(), 0, 0, 0, macd, 0),
+				new Candle(candle.getSecurity(), candle.getToken(), candle.getTime(), 0, 0, 0, macd, 0),
 				prevMacd.getSignalMap().lastEntry().getValue().getIndicatorValue());
 		prevMacd.getMacdMap().put(candle.getTime(), new IndicatorValue(candle.getTime(), macd, IndicatorType.MACD));
 		prevMacd.getSignalMap().put(candle.getTime(), new IndicatorValue(candle.getTime(), signal, IndicatorType.EMA));

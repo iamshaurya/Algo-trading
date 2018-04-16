@@ -207,7 +207,7 @@ public class TradeServiceImpl implements TradeService {
 				.fetchByQuery(TradeQueryBuilder.nativeQueryToFetchPrevDayCandles(securityName));
 		if (prevCandles != null && !prevCandles.isEmpty()) {
 			for (HistoricalCandle pc : prevCandles) {
-				cList.add(TradeBuilder.reverseConvert(pc));
+				cList.add(TradeBuilder.reverseConvert(pc, 0));
 			}
 		}
 		Collections.sort(cList);
@@ -227,14 +227,15 @@ public class TradeServiceImpl implements TradeService {
 		} while (hd == null || hd.size() <= 200);
 
 		for (HistoricalData d : hd) {
-			cList.add(TradeBuilder.convertHistoricalDataToCandle(d, nameTokenMap.get(instrumentToken)));
+			cList.add(
+					TradeBuilder.convertHistoricalDataToCandle(d, nameTokenMap.get(instrumentToken), instrumentToken));
 		}
 		return cList;
 	}
 
 	@Override
 	public List<Candle> getPrevDayCandles(Long instrumentToken, IntervalType interval, Date from, Date to,
-			int candleCount){
+			int candleCount) {
 		Map<Long, String> nameTokenMap = getNameTokenMap();
 		List<Candle> cList = new ArrayList<>();
 		try {
@@ -246,12 +247,16 @@ public class TradeServiceImpl implements TradeService {
 				from = getPrevTradingDate(from);
 			} while (hd == null || hd.size() <= candleCount);
 			for (HistoricalData d : hd) {
-				cList.add(TradeBuilder.convertHistoricalDataToCandle(d, nameTokenMap.get(instrumentToken)));
+				cList.add(TradeBuilder.convertHistoricalDataToCandle(d, nameTokenMap.get(instrumentToken),
+						instrumentToken));
 			}
 		} catch (KiteException | Exception e) {
-			System.out.println("Error fetching historical data :: " +StringUtil.getStackTraceInStringFmt(e));
-			MailSender.sendMail(Constants.TO_MAIL, Constants.TO_NAME, Constants.PREV_DAY_CANDLE,
-					"Error fetching historical data :: " + e.getMessage() + "\n for : "+instrumentToken+"\n from : "+from+"\n to : "+to, mailAccount);
+			System.out.println("Error fetching historical data :: " + StringUtil.getStackTraceInStringFmt(e));
+			MailSender
+					.sendMail(Constants.TO_MAIL, Constants.TO_NAME,
+							Constants.PREV_DAY_CANDLE, "Error fetching historical data :: " + e.getMessage()
+									+ "\n for : " + instrumentToken + "\n from : " + from + "\n to : " + to,
+							mailAccount);
 		}
 		return cList;
 	}
@@ -287,15 +292,15 @@ public class TradeServiceImpl implements TradeService {
 	}
 
 	@Override
-	public Integer fetchNumberOfTradesForTheDay(){
+	public Integer fetchNumberOfTradesForTheDay() {
 		List<Trade> tradeList = tradeRepo.fetchByQuery(TradeQueryBuilder.queryToFetchDayTrades(
 				getDateStringFormat(getDayStartTime().getTime()), getDateStringFormat(getDayEndTime().getTime())));
-		if(tradeList != null && !tradeList.isEmpty()){
+		if (tradeList != null && !tradeList.isEmpty()) {
 			return tradeList.size();
 		}
 		return 0;
 	}
-	
+
 	@Override
 	public void sendPNLStatement() {
 		Map<String, List<Trade>> securityTradeMap = new HashMap<>();
@@ -351,7 +356,8 @@ public class TradeServiceImpl implements TradeService {
 		MailSender.sendMail(Constants.TO_MAIL, Constants.TO_NAME, Constants.DAY_TRADE_SUMMARY,
 				"Date : " + new Date() + "\n" + "Total Profit/Loss : " + pnl + "\n" + "Total trades : "
 						+ (successfullTrade + unsuccessfullTrade) + "\n" + "Succefull trades : " + successfullTrade
-						+ "\n" + "unsuccessfull trades : " + unsuccessfullTrade, mailAccount);
+						+ "\n" + "unsuccessfull trades : " + unsuccessfullTrade,
+				mailAccount);
 	}
 
 	private double brokerageCharge(double buyTradePrice, double sellTradePrice) {
@@ -414,7 +420,8 @@ public class TradeServiceImpl implements TradeService {
 				+ rsiIv.toString() + "\n" + "fast ema : " + fastEma.toString() + "\n" + "slow ema : "
 				+ slowEma.toString() + "\n" + "macd : " + macdIv.toString() + "\n" + "macd signal : "
 				+ macdSignalIv.toString() + "\n" + "200 ema : " + ema200.toString();
-		MailSender.sendMail(Constants.TO_MAIL, Constants.TO_NAME, Constants.MACD_RSI_STRATEGY_SETUP_DATA, mailbody, mailAccount);
+		MailSender.sendMail(Constants.TO_MAIL, Constants.TO_NAME, Constants.MACD_RSI_STRATEGY_SETUP_DATA, mailbody,
+				mailAccount);
 
 	}
 

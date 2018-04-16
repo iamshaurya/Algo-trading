@@ -102,8 +102,8 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 			while (cItr.hasNext()) {
 				Candle c = cItr.next();
 				if (i == 0) {
-					candle15min = new Candle(c.getSecurity(), c.getTime(), c.getOpen(), c.getHigh(), c.getLow(),
-							c.getClose(), 0);
+					candle15min = new Candle(c.getSecurity(), c.getToken(), c.getTime(), c.getOpen(), c.getHigh(),
+							c.getLow(), c.getClose(), 0);
 				} else {
 					candle15min.setClose(c.getClose());
 					candle15min.setHigh(Math.max(candle15min.getHigh(), c.getHigh()));
@@ -125,34 +125,38 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 		if (openTrade == null) {
 			if (bullishMarubozu(candle) && maUptrend(candle) && rsiValue < 70) {
 				dayTradeDone = true;
-				tradeCall = new StrategyModel(PositionType.LONG, (0.0015 * haCandle.getCandle().getClose()),
-						haCandle.getCandle().getClose(), candle.getSecurity(), null, 0, false);
+				tradeCall = new StrategyModel(candle.getToken(), PositionType.LONG,
+						(0.0015 * haCandle.getCandle().getClose()), haCandle.getCandle().getClose(),
+						candle.getSecurity(), null, 0, false);
 			}
 			if (bearishMarubozu(candle) && maDowntrend(candle) && rsiValue > 30) {
 				dayTradeDone = true;
-				tradeCall = new StrategyModel(PositionType.SHORT, (0.0015 * haCandle.getCandle().getClose()),
-						haCandle.getCandle().getClose(), candle.getSecurity(), null, 0, false);
+				tradeCall = new StrategyModel(candle.getToken(), PositionType.SHORT,
+						(0.0015 * haCandle.getCandle().getClose()), haCandle.getCandle().getClose(),
+						candle.getSecurity(), null, 0, false);
 			}
 		} else {
 			// always check for stop loss hit before exiting trade and update
 			// reason in db
 			if (takeProfitReached(haCandle.getCandle(), openTrade)) {
-				tradeCall = new StrategyModel(openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
-						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
+				tradeCall = new StrategyModel(candle.getToken(), openTrade.getPosition(), openTrade.getAtr(),
+						candle.getClose(), openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(),
+						true);
 			}
 			if (stopLossReached(haCandle.getCandle(), openTrade)) {
-				tradeCall = new StrategyModel(openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
-						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
+				tradeCall = new StrategyModel(candle.getToken(), openTrade.getPosition(), openTrade.getAtr(),
+						candle.getClose(), openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(),
+						true);
 			}
-			if (openTrade.getPosition() == PositionType.LONG
-					&& (!maUptrend(candle) || redCandle(candle))) {
-				tradeCall = new StrategyModel(openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
-						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
+			if (openTrade.getPosition() == PositionType.LONG && (!maUptrend(candle) || redCandle(candle))) {
+				tradeCall = new StrategyModel(candle.getToken(), openTrade.getPosition(), openTrade.getAtr(),
+						candle.getClose(), openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(),
+						true);
 			}
-			if (openTrade.getPosition() == PositionType.SHORT
-					&& (!maDowntrend(candle) || greenCandle(candle))) {
-				tradeCall = new StrategyModel(openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
-						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
+			if (openTrade.getPosition() == PositionType.SHORT && (!maDowntrend(candle) || greenCandle(candle))) {
+				tradeCall = new StrategyModel(candle.getToken(), openTrade.getPosition(), openTrade.getAtr(),
+						candle.getClose(), openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(),
+						true);
 			}
 		}
 		prevCandle = haCandle;

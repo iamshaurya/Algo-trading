@@ -51,8 +51,8 @@ public class SuperTrendStrategyImpl implements SuperTrendStrategy {
 			while (cItr.hasNext()) {
 				Candle c = cItr.next();
 				if (i == 0) {
-					candle5min = new Candle(c.getSecurity(), c.getTime(), c.getOpen(), c.getHigh(), c.getLow(),
-							c.getClose(), c.getVolume());
+					candle5min = new Candle(c.getSecurity(), c.getToken(), c.getTime(), c.getOpen(), c.getHigh(),
+							c.getLow(), c.getClose(), c.getVolume());
 				} else {
 					candle5min.setClose(c.getClose());
 					candle5min.setHigh(Math.max(candle5min.getHigh(), c.getHigh()));
@@ -70,43 +70,43 @@ public class SuperTrendStrategyImpl implements SuperTrendStrategy {
 		StrategyModel tradeCall = null;
 		if (openTrade == null) {
 			if (longSignal(candle)) {
-				tradeCall = new StrategyModel(PositionType.LONG, (0.0015 * candle.getClose()), candle.getClose(),
-						candle.getSecurity(), null, 0, false);
+				tradeCall = new StrategyModel(candle.getToken(), PositionType.LONG, (0.0015 * candle.getClose()),
+						candle.getClose(), candle.getSecurity(), null, 0, false);
 			}
 			if (shortSignal(candle)) {
-				tradeCall = new StrategyModel(PositionType.SHORT, (0.0015 * candle.getClose()), candle.getClose(),
-						candle.getSecurity(), null, 0, false);
+				tradeCall = new StrategyModel(candle.getToken(), PositionType.SHORT, (0.0015 * candle.getClose()),
+						candle.getClose(), candle.getSecurity(), null, 0, false);
 			}
 		} else if (openTrade != null) {
 			// always check for stop loss hit before exiting trade and update
 			// reason in db
 			if (stopLossReached(candle, openTrade)) {
-				tradeCall = new StrategyModel(openTrade.getPosition(), (double) (openTrade.getSl() / 2),
-						candle.getClose(), openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(),
-						true);
+				tradeCall = new StrategyModel(candle.getToken(), openTrade.getPosition(),
+						(double) (openTrade.getSl() / 2), candle.getClose(), openTrade.getSecurity(),
+						openTrade.getOrderId(), openTrade.getQuantity(), true);
 			}
-			if(openTrade.getPosition() == PositionType.LONG && shortSignal(candle)){
-				tradeCall = new StrategyModel(openTrade.getPosition(), (double) (openTrade.getSl() / 2),
-						candle.getClose(), openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(),
-						true);
+			if (openTrade.getPosition() == PositionType.LONG && shortSignal(candle)) {
+				tradeCall = new StrategyModel(candle.getToken(), openTrade.getPosition(),
+						(double) (openTrade.getSl() / 2), candle.getClose(), openTrade.getSecurity(),
+						openTrade.getOrderId(), openTrade.getQuantity(), true);
 			}
-			if(openTrade.getPosition() == PositionType.SHORT && longSignal(candle)){
-				tradeCall = new StrategyModel(openTrade.getPosition(), (double) (openTrade.getSl() / 2),
-						candle.getClose(), openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(),
-						true);
+			if (openTrade.getPosition() == PositionType.SHORT && longSignal(candle)) {
+				tradeCall = new StrategyModel(candle.getToken(), openTrade.getPosition(),
+						(double) (openTrade.getSl() / 2), candle.getClose(), openTrade.getSecurity(),
+						openTrade.getOrderId(), openTrade.getQuantity(), true);
 			}
 		}
 		return tradeCall;
 	}
-	
-	public boolean longSignal(Candle candle){
+
+	public boolean longSignal(Candle candle) {
 		double st7_2 = superTrend7_2.getSuperTrendMap().lastEntry().getValue().getIndicatorValue();
 		double st7_3 = superTrend7_3.getSuperTrendMap().lastEntry().getValue().getIndicatorValue();
 		double st10_3 = superTrend10_3.getSuperTrendMap().lastEntry().getValue().getIndicatorValue();
 		return (st7_2 < candle.getClose()) && (st7_3 < candle.getClose()) && (st10_3 < candle.getClose());
 	}
-	
-	public boolean shortSignal(Candle candle){
+
+	public boolean shortSignal(Candle candle) {
 		double st7_2 = superTrend7_2.getSuperTrendMap().lastEntry().getValue().getIndicatorValue();
 		double st7_3 = superTrend7_3.getSuperTrendMap().lastEntry().getValue().getIndicatorValue();
 		double st10_3 = superTrend10_3.getSuperTrendMap().lastEntry().getValue().getIndicatorValue();
@@ -134,11 +134,10 @@ public class SuperTrendStrategyImpl implements SuperTrendStrategy {
 
 	@Override
 	public void destroySetup() {
-		/*atr7 = null;
-		atr10 = null;
-		superTrend7_2 = null;
-		superTrend7_3 = null;
-		superTrend10_3 = null;*/
+		/*
+		 * atr7 = null; atr10 = null; superTrend7_2 = null; superTrend7_3 =
+		 * null; superTrend10_3 = null;
+		 */
 		candle5Set.clear();
 	}
 

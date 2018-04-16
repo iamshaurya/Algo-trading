@@ -91,7 +91,7 @@ public class HelperUtil {
 	public static List<Candle> convertIndiactorValueToCandle(List<IndicatorValue> ivlist) {
 		List<Candle> cList = new ArrayList<>();
 		for (IndicatorValue iv : ivlist) {
-			cList.add(new Candle(null, iv.getDate(), 0, 0, 0, iv.getIndicatorValue(), 0));
+			cList.add(new Candle(null, 0, iv.getDate(), 0, 0, 0, iv.getIndicatorValue(), 0));
 		}
 		return cList;
 	}
@@ -110,7 +110,7 @@ public class HelperUtil {
 		}
 		return isTakeProfitReached;
 	}
-	
+
 	public static boolean stopLossReached(Candle candle, StrategyModel openTrade) {
 		boolean isStopLossReached = false;
 		switch (openTrade.getPosition()) {
@@ -188,7 +188,7 @@ public class HelperUtil {
 	}
 
 	public static Candle convertTickToCandle(Tick tick, Map<Long, String> nameTokenMap) {
-		return new Candle(nameTokenMap.get(tick.getInstrumentToken()),
+		return new Candle(nameTokenMap.get(tick.getInstrumentToken()), tick.getInstrumentToken(),
 				getDateFromTickTimestamp(tick.getTickTimestamp()), tick.getOpenPrice(), tick.getHighPrice(),
 				tick.getLowPrice(), tick.getClosePrice(), tick.getVolumeTradedToday());
 	}
@@ -271,10 +271,9 @@ public class HelperUtil {
 	public static boolean isNifty50Uptrend(Candle c) {
 		return c.getClose() >= (c.getOpen() * 1.0025);
 	}
-	
+
 	public static boolean isNifty50Downtrend(Candle c) {
 		return c.getClose() <= (c.getOpen() * 0.9975);
 	}
-	
 
 }

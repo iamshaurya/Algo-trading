@@ -42,7 +42,7 @@ public class LiveTickCandle {
 	public void setCount(AtomicInteger count) {
 		this.count = count;
 	}
-	
+
 	public TreeSet<Date> getCandleDate() {
 		return candleDate;
 	}
@@ -55,9 +55,9 @@ public class LiveTickCandle {
 
 	}
 
-	public LiveTickCandle(double ltp, String security, Date time) {
+	public LiveTickCandle(double ltp, String security, long token, Date time) {
 		if (candle == null) {
-			candle = new Candle(security, time, ltp, ltp, ltp, ltp, 0);
+			candle = new Candle(security, token, time, ltp, ltp, ltp, ltp, 0);
 		} else {
 			this.candle.setTime(time);
 			this.candle.setOpen(ltp);
@@ -71,7 +71,6 @@ public class LiveTickCandle {
 		candleDate.add(this.prevCandleCreationTime);
 	}
 
-
 	public void update(double ltp, Date time) {
 		this.candle.setTime(this.prevCandleCreationTime);
 		this.candle.setClose(ltp);
@@ -80,8 +79,8 @@ public class LiveTickCandle {
 		this.count.incrementAndGet();
 		candleDate.add(time);
 	}
-	
-	public Date getLastTime(){
+
+	public Date getLastTime() {
 		return getCandleDate().last();
 	}
 }

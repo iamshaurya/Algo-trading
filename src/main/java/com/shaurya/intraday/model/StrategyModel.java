@@ -38,8 +38,9 @@ public class StrategyModel {
 
 	}
 
-	public StrategyModel(PositionType position, double atr, double tradePrice, String security, String orderId,
-			int quantity, boolean exitOrder) {
+	public StrategyModel(long token, PositionType position, double atr, double tradePrice, String security,
+			String orderId, int quantity, boolean exitOrder) {
+		this.securityToken = token;
 		this.position = position;
 		this.atr = atr;
 		this.tradePrice = tradePrice;
@@ -58,17 +59,17 @@ public class StrategyModel {
 		double fa = (double) ad / 10;
 		this.sl = fa * 2;
 	}
-	
-	public void trailSl(double tsl){
+
+	public void trailSl(double tsl) {
 		int ai = (int) (tsl * 100);
 		double ad = Math.ceil((double) ai / 10);
 		double fa = (double) ad / 10;
 		this.sl = this.sl - fa;
-		System.out.println("Trailing sl for : "+this.security+" new sl : "+this.sl);
+		System.out.println("Trailing sl for : " + this.security + " new sl : " + this.sl);
 	}
 
 	public void setTp(double sl) {
-		//50 to keep it open ended
+		// 50 to keep it open ended
 		int ai = (int) (this.sl * 50 * 100);
 		double ad = Math.ceil((double) ai / 10);
 		double fa = (double) ad / 10;

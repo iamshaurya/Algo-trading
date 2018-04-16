@@ -35,10 +35,10 @@ public class OpenHighLowStrategyImpl implements OpenHighLowStrategy {
 	@Override
 	public StrategyModel processTrades(Candle candle, StrategyModel openTrade, boolean updateSetup) {
 		if (updateSetup) {
-			/*if(current30Candle == null){
-				candleSet.add(candle);
-				form30MinCandle();
-			}*/
+			/*
+			 * if(current30Candle == null){ candleSet.add(candle);
+			 * form30MinCandle(); }
+			 */
 			candleSet.add(candle);
 			Candle candle5min = form30MinCandle();
 			if (candle5min != null) {
@@ -55,8 +55,8 @@ public class OpenHighLowStrategyImpl implements OpenHighLowStrategy {
 			while (cItr.hasNext()) {
 				Candle c = cItr.next();
 				if (i == 0) {
-					current30Candle = new Candle(c.getSecurity(), c.getTime(), c.getOpen(), c.getHigh(), c.getLow(),
-							c.getClose(), 0);
+					current30Candle = new Candle(c.getSecurity(), c.getToken(), c.getTime(), c.getOpen(), c.getHigh(),
+							c.getLow(), c.getClose(), 0);
 				} else {
 					current30Candle.setClose(c.getClose());
 					current30Candle.setHigh(Math.max(current30Candle.getHigh(), c.getHigh()));
@@ -72,32 +72,33 @@ public class OpenHighLowStrategyImpl implements OpenHighLowStrategy {
 	private StrategyModel getTradeCall(Candle candle, StrategyModel openTrade) {
 		StrategyModel tradeCall = null;
 		if (openTrade == null) {
-			if (CandlestickPatternHelper.bullishMarubozu(candle) && (candle.getClose() >= (1.003*candle.getLow()))) {
+			if (CandlestickPatternHelper.bullishMarubozu(candle) && (candle.getClose() >= (1.003 * candle.getLow()))) {
 				dayTradeDone = true;
-				tradeCall = new StrategyModel(PositionType.LONG, (0.0015 * candle.getClose()), candle.getClose(),
-						candle.getSecurity(), null, 0, false);
+				tradeCall = new StrategyModel(candle.getToken(), PositionType.LONG, (0.0015 * candle.getClose()),
+						candle.getClose(), candle.getSecurity(), null, 0, false);
 			}
-			if (CandlestickPatternHelper.bearishMarubozu(candle) && (candle.getClose() <= (0.997*candle.getHigh()))) {
+			if (CandlestickPatternHelper.bearishMarubozu(candle) && (candle.getClose() <= (0.997 * candle.getHigh()))) {
 				dayTradeDone = true;
-				tradeCall = new StrategyModel(PositionType.SHORT, (0.0015 * candle.getClose()), candle.getClose(),
-						candle.getSecurity(), null, 0, false);
+				tradeCall = new StrategyModel(candle.getToken(), PositionType.SHORT, (0.0015 * candle.getClose()),
+						candle.getClose(), candle.getSecurity(), null, 0, false);
 			}
 		} else {
 			// always check for stop loss hit before exiting trade and update
 			// reason in db
 			if (targetProfitReached(candle, openTrade)) {
-				tradeCall = new StrategyModel(openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
-						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
+				tradeCall = new StrategyModel(candle.getToken(), openTrade.getPosition(), openTrade.getAtr(),
+						candle.getClose(), openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(),
+						true);
 			}
 			if (stopLossReached(candle, openTrade)) {
-				tradeCall = new StrategyModel(openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
-						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
+				tradeCall = new StrategyModel(candle.getToken(), openTrade.getPosition(), openTrade.getAtr(),
+						candle.getClose(), openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(),
+						true);
 			}
 		}
 		return tradeCall;
 
 	}
-
 
 	private boolean targetProfitReached(Candle candle, StrategyModel openTrade) {
 		boolean targetReached = false;
@@ -120,11 +121,11 @@ public class OpenHighLowStrategyImpl implements OpenHighLowStrategy {
 		dayTradeDone = false;
 	}
 
-
 	@Override
 	public void destroySetup() {
-		/*candleSet = null;
-		current30Candle = null;*/
+		/*
+		 * candleSet = null; current30Candle = null;
+		 */
 		dayTradeDone = false;
 		current30Candle = null;
 		candleSet.clear();
@@ -132,7 +133,7 @@ public class OpenHighLowStrategyImpl implements OpenHighLowStrategy {
 
 	@Override
 	public void updateSetup(Candle candle) {
-		
+
 	}
 
 }

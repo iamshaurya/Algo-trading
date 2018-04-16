@@ -33,7 +33,7 @@ public class TradeBuilder {
 		trade.setOrderId(model.getOrderId());
 		trade.setPositionType((byte) model.getPosition().getId());
 		trade.setQuantity(model.getQuantity());
-		trade.setSecurityCode(null);
+		trade.setSecurityCode(model.getSecurityToken());
 		trade.setSecurityName(model.getSecurity());
 		trade.setSl(model.getSl());
 		trade.setTp(model.getTp());
@@ -45,8 +45,9 @@ public class TradeBuilder {
 	}
 
 	public static StrategyModel reverseConvert(Trade openTrade, boolean isOpenTrade) {
-		StrategyModel model = new StrategyModel(PositionType.getEnumById(openTrade.getPositionType().intValue()),
-				openTrade.getAtr(), isOpenTrade ? openTrade.getTradeEntryPrice() : openTrade.getTradeExitPrice(),
+		StrategyModel model = new StrategyModel(openTrade.getSecurityCode(),
+				PositionType.getEnumById(openTrade.getPositionType().intValue()), openTrade.getAtr(),
+				isOpenTrade ? openTrade.getTradeEntryPrice() : openTrade.getTradeExitPrice(),
 				openTrade.getSecurityName(), openTrade.getOrderId(), openTrade.getQuantity(), false);
 		return model;
 	}
@@ -75,15 +76,15 @@ public class TradeBuilder {
 		return hc;
 	}
 
-	public static Candle reverseConvert(HistoricalCandle hc) {
-		return new Candle(hc.getSecurityName(), hc.getTimestamp(), hc.getOpen(), hc.getHigh(), hc.getLow(),
+	public static Candle reverseConvert(HistoricalCandle hc, long token) {
+		return new Candle(hc.getSecurityName(), token, hc.getTimestamp(), hc.getOpen(), hc.getHigh(), hc.getLow(),
 				hc.getClose(), 0);
 
 	}
 
-	public static Candle convertHistoricalDataToCandle(HistoricalData hd, String security) {
+	public static Candle convertHistoricalDataToCandle(HistoricalData hd, String security, long token) {
 		Date time = new DateTime(hd.timeStamp).toDate();
-		return new Candle(security, time, hd.open, hd.high, hd.low, hd.close, hd.volume);
+		return new Candle(security, token, time, hd.open, hd.high, hd.low, hd.close, hd.volume);
 	}
 
 	public static TradeStrategy convertStrategyModelToEntity(StrategyModel sm) {

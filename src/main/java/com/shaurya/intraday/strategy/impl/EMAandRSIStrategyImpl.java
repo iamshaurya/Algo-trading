@@ -76,8 +76,8 @@ public class EMAandRSIStrategyImpl implements EMAandRSIStrategy {
 			while (cItr.hasNext()) {
 				Candle c = cItr.next();
 				if (i == 0) {
-					candle5min = new Candle(c.getSecurity(), c.getTime(), c.getOpen(), c.getHigh(), c.getLow(),
-							c.getClose(), 0);
+					candle5min = new Candle(c.getSecurity(), c.getToken(), c.getTime(), c.getOpen(), c.getHigh(),
+							c.getLow(), c.getClose(), 0);
 				} else {
 					candle5min.setClose(c.getClose());
 					candle5min.setHigh(Math.max(candle5min.getHigh(), c.getHigh()));
@@ -96,30 +96,30 @@ public class EMAandRSIStrategyImpl implements EMAandRSIStrategy {
 		double atrValue = atr.getAtrMap().lastEntry().getValue().getIndicatorValue();
 		if (openTrade == null) {
 			if (bullishBreakout(prevCandle, candle) && highVolatility()) {
-				tradeCall = new StrategyModel(PositionType.LONG, (0.0025 * candle.getClose()), candle.getClose(),
+				tradeCall = new StrategyModel(candle.getToken(),PositionType.LONG, (0.0025 * candle.getClose()), candle.getClose(),
 						candle.getSecurity(), null, 0, false);
 			}
 			if (bearishBreakout(prevCandle, candle) && highVolatility()) {
-				tradeCall = new StrategyModel(PositionType.SHORT, (0.0025 * candle.getClose()), candle.getClose(),
+				tradeCall = new StrategyModel(candle.getToken(),PositionType.SHORT, (0.0025 * candle.getClose()), candle.getClose(),
 						candle.getSecurity(), null, 0, false);
 			}
 		} else {
 			// always check for stop loss hit before exiting trade and update
 			// reason in db
 			if (takeProfitReached(candle, openTrade)) {
-				tradeCall = new StrategyModel(openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
+				tradeCall = new StrategyModel(candle.getToken(),openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
 						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
 			}
 			if (stopLossReached(candle, openTrade)) {
-				tradeCall = new StrategyModel(openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
+				tradeCall = new StrategyModel(candle.getToken(),openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
 						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
 			}
 			if (openTrade.getPosition() == PositionType.LONG && (bearishBreakout(prevCandle, candle))) {
-				tradeCall = new StrategyModel(openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
+				tradeCall = new StrategyModel(candle.getToken(),openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
 						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
 			}
 			if (openTrade.getPosition() == PositionType.SHORT && (bullishBreakout(prevCandle, candle))) {
-				tradeCall = new StrategyModel(openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
+				tradeCall = new StrategyModel(candle.getToken(),openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
 						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
 			}
 		}
@@ -133,7 +133,7 @@ public class EMAandRSIStrategyImpl implements EMAandRSIStrategy {
 		double atrSignalValue = atr.getAtrSignal().get(currentTime).getIndicatorValue();
 		return atrValue > atrSignalValue;
 	}
-	
+
 	private boolean bearishEntry(Candle candle) {
 		Date currentTime = getNthLastKeyEntry(ema9Map, 1);
 		return (CandlestickPatternHelper.redCandle(candle))
@@ -159,23 +159,23 @@ public class EMAandRSIStrategyImpl implements EMAandRSIStrategy {
 		Date currentTime = getNthLastKeyEntry(fastEmaMap, 1);
 		return (candle.getClose() <= ema21Map.get(currentTime).getIndicatorValue());
 	}
-	
-	private boolean bullishBreakout(Candle prevCandle, Candle candle){
+
+	private boolean bullishBreakout(Candle prevCandle, Candle candle) {
 		boolean breakout = false;
 		Date currentTime = getNthLastKeyEntry(ema21Map, 1);
 		double breakoutLevel = ema21Map.get(currentTime).getIndicatorValue();
-		if(prevCandle != null){
+		if (prevCandle != null) {
 			breakout = ((prevCandle.getClose() < breakoutLevel) && (candle.getClose() > breakoutLevel))
 					|| ((candle.getOpen() < breakoutLevel) && (candle.getClose() > breakoutLevel));
 		}
 		return breakout && CandlestickPatternHelper.greenCandle(candle);
 	}
-	
-	private boolean bearishBreakout(Candle prevCandle, Candle candle){
+
+	private boolean bearishBreakout(Candle prevCandle, Candle candle) {
 		boolean breakout = false;
 		Date currentTime = getNthLastKeyEntry(ema21Map, 1);
 		double breakoutLevel = ema21Map.get(currentTime).getIndicatorValue();
-		if(prevCandle != null){
+		if (prevCandle != null) {
 			breakout = ((prevCandle.getClose() > breakoutLevel) && (candle.getClose() < breakoutLevel))
 					|| ((candle.getOpen() > breakoutLevel) && (candle.getClose() < breakoutLevel));
 		}

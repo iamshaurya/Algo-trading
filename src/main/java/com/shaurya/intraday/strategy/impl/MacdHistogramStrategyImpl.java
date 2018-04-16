@@ -87,8 +87,8 @@ public class MacdHistogramStrategyImpl implements MacdHistogramStrategy {
 			while (cItr.hasNext()) {
 				Candle c = cItr.next();
 				if (i == 0) {
-					candle5min = new Candle(c.getSecurity(), c.getTime(), c.getOpen(), c.getHigh(), c.getLow(),
-							c.getClose(), 0);
+					candle5min = new Candle(c.getSecurity(), c.getToken(), c.getTime(), c.getOpen(), c.getHigh(),
+							c.getLow(), c.getClose(), 0);
 				} else {
 					candle5min.setClose(c.getClose());
 					candle5min.setHigh(Math.max(candle5min.getHigh(), c.getHigh()));
@@ -107,12 +107,12 @@ public class MacdHistogramStrategyImpl implements MacdHistogramStrategy {
 		double atrValue = atr.getAtrMap().get(currentTime).getIndicatorValue();
 		if (openTrade == null) {
 			if (isStrongSignal() && isUptrend(candle) && entryBullishMacdHistogram() && rsiValue < 70) {
-				return new StrategyModel(PositionType.LONG, atrValue, candle.getClose(), candle.getSecurity(), null, 0,
-						false);
+				return new StrategyModel(candle.getToken(), PositionType.LONG, atrValue, candle.getClose(),
+						candle.getSecurity(), null, 0, false);
 			}
 			if (isStrongSignal() && isDowntrend(candle) && entryBearishMacdHistogram() && rsiValue > 30) {
-				return new StrategyModel(PositionType.SHORT, atrValue, candle.getClose(), candle.getSecurity(), null, 0,
-						false);
+				return new StrategyModel(candle.getToken(), PositionType.SHORT, atrValue, candle.getClose(),
+						candle.getSecurity(), null, 0, false);
 			}
 		} else {
 			// always check for stop loss hit before exiting trade and update
@@ -175,7 +175,7 @@ public class MacdHistogramStrategyImpl implements MacdHistogramStrategy {
 				- signalMap.get(prevTime).getIndicatorValue();
 		double currentHistogramValue = macdMap.get(currentTime).getIndicatorValue()
 				- signalMap.get(currentTime).getIndicatorValue();
-		//return (prevHistogramValue > currentHistogramValue);
+		// return (prevHistogramValue > currentHistogramValue);
 		return (macdMap.get(prevTime).getIndicatorValue() >= signalMap.get(prevTime).getIndicatorValue())
 				&& (macdMap.get(currentTime).getIndicatorValue() < signalMap.get(currentTime).getIndicatorValue());
 	}
@@ -206,7 +206,7 @@ public class MacdHistogramStrategyImpl implements MacdHistogramStrategy {
 				- signalMap.get(currentTime).getIndicatorValue();
 		System.out.println("prev macd histogram : " + prevHistogramValue);
 		System.out.println("current macd histogram : " + currentHistogramValue);
-		//return (prevHistogramValue < currentHistogramValue);
+		// return (prevHistogramValue < currentHistogramValue);
 		return (macdMap.get(prevTime).getIndicatorValue() <= signalMap.get(prevTime).getIndicatorValue())
 				&& (macdMap.get(currentTime).getIndicatorValue() > signalMap.get(currentTime).getIndicatorValue());
 	}
@@ -248,7 +248,8 @@ public class MacdHistogramStrategyImpl implements MacdHistogramStrategy {
 				+ rsiIv.toString() + "\n" + "fast ema : " + fastEma.toString() + "\n" + "slow ema : "
 				+ slowEma.toString() + "\n" + "macd : " + macdIv.toString() + "\n" + "macd signal : "
 				+ macdSignalIv.toString() + "\n" + "200 ema : " + ema200.toString();
-		//MailSender.sendMail(Constants.TO_MAIL, Constants.TO_NAME, Constants.MACD_RSI_STRATEGY_SETUP_DATA, mailbody);
+		// MailSender.sendMail(Constants.TO_MAIL, Constants.TO_NAME,
+		// Constants.MACD_RSI_STRATEGY_SETUP_DATA, mailbody);
 	}
 
 	@Override

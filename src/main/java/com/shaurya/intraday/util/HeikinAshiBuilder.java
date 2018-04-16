@@ -34,8 +34,8 @@ public class HeikinAshiBuilder {
 			haLow = Math.min(currentCandle.getLow(), Math.min(haOpen, haClose));
 			haHigh = Math.max(currentCandle.getHigh(), Math.max(haOpen, haClose));
 		}
-		haCandle = new Candle(currentCandle.getSecurity(), currentCandle.getTime(), haOpen, haHigh, haLow, haClose,
-				currentCandle.getVolume());
+		haCandle = new Candle(currentCandle.getSecurity(), currentCandle.getToken(), currentCandle.getTime(), haOpen,
+				haHigh, haLow, haClose, currentCandle.getVolume());
 		return new HeikinAshiCandle(haCandle, currentCandle);
 	}
 

@@ -17,8 +17,9 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class Candle implements Comparable<Candle>{
+public class Candle implements Comparable<Candle> {
 	private String security;
+	private long token;
 	private Date time;
 	private double open;
 	private double high;
@@ -26,8 +27,10 @@ public class Candle implements Comparable<Candle>{
 	private double close;
 	private double volume;
 
-	public Candle(String security, Date time, double open, double high, double low, double close, double volume) {
+	public Candle(String security, long token, Date time, double open, double high, double low, double close,
+			double volume) {
 		this.security = security;
+		this.token = token;
 		this.time = time;
 		this.open = open;
 		this.high = high;
@@ -35,7 +38,7 @@ public class Candle implements Comparable<Candle>{
 		this.close = close;
 		this.volume = volume;
 	}
-	
+
 	@Override
 	public int compareTo(Candle o) {
 		Date a = this.time;
@@ -51,10 +54,8 @@ public class Candle implements Comparable<Candle>{
 
 	@Override
 	public String toString() {
-		return "Candle [security=" + security + ", time=" + time + ", open=" + open + ", high=" + high + ", low=" + low
-				+ ", close=" + close + ", volume=" + volume + "]";
+		return "Candle [security=" + security + ", token=" + token + ", time=" + time + ", open=" + open + ", high="
+				+ high + ", low=" + low + ", close=" + close + ", volume=" + volume + "]";
 	}
-	
-	
 
 }

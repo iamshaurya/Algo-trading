@@ -43,7 +43,7 @@ public class Trade {
 	@Column(name = "security_name")
 	private String securityName;
 	@Column(name = "security_code")
-	private Integer securityCode;
+	private Long securityCode;
 	@Column(name = "order_id")
 	private String orderId;
 	@Column(name = "quantity")

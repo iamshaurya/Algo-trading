@@ -52,7 +52,7 @@ public class ATR {
 
 			double tr = Math.max(hlDiff, Math.max(hcDiff, lcDiff));
 
-			tr = (double) (atrList.get(atrList.size() - 1).getIndicatorValue() * (period -1) + tr) / period;
+			tr = (double) (atrList.get(atrList.size() - 1).getIndicatorValue() * (period - 1) + tr) / period;
 
 			atrList.add(new IndicatorValue(cList.get(index).getTime(), tr, IndicatorType.ATR));
 
@@ -81,7 +81,8 @@ public class ATR {
 		double prevAtrSignal = atr.getAtrSignal().lastEntry().getValue().getIndicatorValue();
 		double currentAtr = (double) (prevAtr * (period - 1) + tr) / period;
 		double atrSignal = EMA.calculateEMA(5,
-				new Candle(candle.getSecurity(), candle.getTime(), 0, 0, 0, currentAtr, 0), prevAtrSignal);
+				new Candle(candle.getSecurity(), candle.getToken(), candle.getTime(), 0, 0, 0, currentAtr, 0),
+				prevAtrSignal);
 		atr.getAtrMap().put(candle.getTime(), new IndicatorValue(candle.getTime(), currentAtr, IndicatorType.ATR));
 		atr.getAtrSignal().put(candle.getTime(), new IndicatorValue(candle.getTime(), atrSignal, IndicatorType.EMA));
 		atr.setLastCandle(candle);

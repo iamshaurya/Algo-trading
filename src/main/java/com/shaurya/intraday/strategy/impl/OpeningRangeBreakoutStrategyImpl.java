@@ -53,8 +53,8 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
 			while (cItr.hasNext()) {
 				Candle c = cItr.next();
 				if (i == 0) {
-					candle15min = new Candle(c.getSecurity(), c.getTime(), c.getOpen(), c.getHigh(), c.getLow(),
-							c.getClose(), 0);
+					candle15min = new Candle(c.getSecurity(), c.getToken(), c.getTime(), c.getOpen(), c.getHigh(),
+							c.getLow(), c.getClose(), 0);
 				} else {
 					candle15min.setClose(c.getClose());
 					candle15min.setHigh(Math.max(candle15min.getHigh(), c.getHigh()));
@@ -72,26 +72,26 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
 		if (openTrade == null) {
 			if (!dayTradeDone && candle.getClose() > first15minCandle.getHigh()) {
 				dayTradeDone = true;
-				tradeCall = new StrategyModel(PositionType.LONG, 0.0015*candle.getClose(), candle.getClose(),
-						candle.getSecurity(), null, 0, false);
+				tradeCall = new StrategyModel(candle.getToken(), PositionType.LONG, 0.0015 * candle.getClose(),
+						candle.getClose(), candle.getSecurity(), null, 0, false);
 			}
 			if (!dayTradeDone && candle.getClose() < first15minCandle.getLow()) {
 				dayTradeDone = true;
-				tradeCall = new StrategyModel(PositionType.SHORT, 0.0015*candle.getClose(), candle.getClose(),
-						candle.getSecurity(), null, 0, false);
+				tradeCall = new StrategyModel(candle.getToken(), PositionType.SHORT, 0.0015 * candle.getClose(),
+						candle.getClose(), candle.getSecurity(), null, 0, false);
 			}
 		} else {
 			// always check for stop loss hit before exiting trade and update
 			// reason in db
 			if (takeProfitReached(candle, openTrade)) {
-				tradeCall = new StrategyModel(openTrade.getPosition(), (double) (openTrade.getSl() / 2),
-						candle.getClose(), openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(),
-						true);
+				tradeCall = new StrategyModel(candle.getToken(), openTrade.getPosition(),
+						(double) (openTrade.getSl() / 2), candle.getClose(), openTrade.getSecurity(),
+						openTrade.getOrderId(), openTrade.getQuantity(), true);
 			}
 			if (stopLossReached(candle, openTrade)) {
-				tradeCall = new StrategyModel(openTrade.getPosition(), (double) (openTrade.getSl() / 2),
-						candle.getClose(), openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(),
-						true);
+				tradeCall = new StrategyModel(candle.getToken(), openTrade.getPosition(),
+						(double) (openTrade.getSl() / 2), candle.getClose(), openTrade.getSecurity(),
+						openTrade.getOrderId(), openTrade.getQuantity(), true);
 			}
 		}
 		return tradeCall;
@@ -116,16 +116,16 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
 		dayTradeDone = false;
 	}
 
-
 	@Override
 	public void destroySetup() {
 		candle15Set = null;
 		first15minCandle = null;
 		dayTradeDone = false;
-		
-		/*candle5Set.clear();
-		candle30Set.clear();*/
-		 
+
+		/*
+		 * candle5Set.clear(); candle30Set.clear();
+		 */
+
 	}
 
 	@Override

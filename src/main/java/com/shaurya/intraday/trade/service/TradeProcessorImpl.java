@@ -165,9 +165,11 @@ public class TradeProcessorImpl implements TradeProcessor {
 			}
 		} catch (KiteException e) {
 			System.out.println("Some exception occured due to : " + e.getCause());
-			MailSender.sendMail(Constants.TO_MAIL, Constants.TO_NAME, Constants.KITE_EXCEPTION_TRADE_PROCESSOR,
-					"TradeProcessorImpl.getTradeCall :: candle : " + candle.toString()
-							+ " :: Some exception occured due to : " + e.getCause(), mailAccount);
+			MailSender
+					.sendMail(Constants.TO_MAIL, Constants.TO_NAME,
+							Constants.KITE_EXCEPTION_TRADE_PROCESSOR, "TradeProcessorImpl.getTradeCall :: candle : "
+									+ candle.toString() + " :: Some exception occured due to : " + e.getCause(),
+							mailAccount);
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.out.println("Some exception occured due to : " + e.getCause());
@@ -201,13 +203,13 @@ public class TradeProcessorImpl implements TradeProcessor {
 		}
 		return null;
 	}
-	
+
 	private boolean topGainerStock(StrategyModel tradeCall) {
 		StockMovement aux = new StockMovement(tradeCall.getSecurity(), tradeCall.getSecurityToken(), 0, 0);
 		return topGainer.contains(aux) && (topGainer.indexOf(aux) < 10);
 	}
-	
-	private boolean topLoserStock(StrategyModel tradeCall){
+
+	private boolean topLoserStock(StrategyModel tradeCall) {
 		StockMovement aux = new StockMovement(tradeCall.getSecurity(), tradeCall.getSecurityToken(), 0, 0);
 		return topLoser.contains(aux) && (topLoser.indexOf(aux) < 10);
 	}
@@ -221,7 +223,7 @@ public class TradeProcessorImpl implements TradeProcessor {
 		topLoser = new ArrayList<>();
 		Map<StrategyModel, StrategyType> strategyTypeMap = tradeService.getTradeStrategy();
 		for (Entry<StrategyModel, StrategyType> e : strategyTypeMap.entrySet()) {
-			try{
+			try {
 				List<Candle> cList = null;
 				e.getKey().setTradeMargin(e.getKey().getMarginPortion());
 				switch (e.getValue()) {
@@ -270,9 +272,11 @@ public class TradeProcessorImpl implements TradeProcessor {
 					orb.initializeSetup(cList);
 					strategyMap.put(e.getKey().getSecurity(), orb);
 					double orbLtp = cList.get(cList.size() - 1).getClose();
-					if(orbLtp <= 1500){
-						topGainer.add(new StockMovement(e.getKey().getSecurity(), e.getKey().getSecurityToken(), orbLtp, orbLtp));
-						topLoser.add(new StockMovement(e.getKey().getSecurity(), e.getKey().getSecurityToken(), orbLtp, orbLtp));
+					if (orbLtp <= 1500) {
+						topGainer.add(new StockMovement(e.getKey().getSecurity(), e.getKey().getSecurityToken(), orbLtp,
+								orbLtp));
+						topLoser.add(new StockMovement(e.getKey().getSecurity(), e.getKey().getSecurityToken(), orbLtp,
+								orbLtp));
 					}
 					break;
 				case GANN_SQUARE_9:
@@ -282,20 +286,24 @@ public class TradeProcessorImpl implements TradeProcessor {
 					gann.initializeSetup(cList);
 					strategyMap.put(e.getKey().getSecurity(), gann);
 					double gannLtp = cList.get(cList.size() - 1).getClose();
-					if(gannLtp <= 1500){
-						topGainer.add(new StockMovement(e.getKey().getSecurity(), e.getKey().getSecurityToken(), gannLtp, gannLtp));
-						topLoser.add(new StockMovement(e.getKey().getSecurity(), e.getKey().getSecurityToken(), gannLtp, gannLtp));
+					if (gannLtp <= 1500) {
+						topGainer.add(new StockMovement(e.getKey().getSecurity(), e.getKey().getSecurityToken(),
+								gannLtp, gannLtp));
+						topLoser.add(new StockMovement(e.getKey().getSecurity(), e.getKey().getSecurityToken(), gannLtp,
+								gannLtp));
 					}
 					break;
 				default:
 					break;
 				}
 				metadatMap.put(e.getKey().getSecurity(), e.getKey());
-			
-			}catch(Exception ex){
-				System.out.println("Error initializing historical data :: " +StringUtil.getStackTraceInStringFmt(ex));
+
+			} catch (Exception ex) {
+				System.out.println("Error initializing historical data :: " + StringUtil.getStackTraceInStringFmt(ex));
 				MailSender.sendMail(Constants.TO_MAIL, Constants.TO_NAME, Constants.KITE_EXCEPTION_TRADE_PROCESSOR,
-						"Error initialiing historical data :: " + ex.getMessage() + "\n for : "+e.getKey().getSecurity(), mailAccount);
+						"Error initialiing historical data :: " + ex.getMessage() + "\n for : "
+								+ e.getKey().getSecurity(),
+						mailAccount);
 			}
 		}
 		// tradeService.deletePrevDayCandlesAndStrategy();
@@ -308,7 +316,7 @@ public class TradeProcessorImpl implements TradeProcessor {
 				rollDayOfYearByN(cal.getTime(), -1), cal.getTime(), 1);
 		Collections.sort(niftyClist);
 		Candle auxC = niftyClist.get(niftyClist.size() - 1);
-		nifty50Candle = new Candle("Nifty 50", new Date(), auxC.getClose(), 0, 0, 0, 0);
+		nifty50Candle = new Candle("Nifty 50", 256265l, new Date(), auxC.getClose(), 0, 0, 0, 0);
 		System.out.println("Nifty 50 :: last day closing :: " + nifty50Candle.getOpen());
 	}
 
@@ -320,15 +328,15 @@ public class TradeProcessorImpl implements TradeProcessor {
 			this.nifty50Candle.setClose(ltp);
 		}
 	}
-	
+
 	@Override
-	public synchronized void updateTopGainerLoser(double token, double ltp){
+	public synchronized void updateTopGainerLoser(double token, double ltp) {
 		StockMovement aux = new StockMovement("", token, ltp, ltp);
-		if(topGainer.contains(aux)){
+		if (topGainer.contains(aux)) {
 			topGainer.get(topGainer.indexOf(aux)).updateLtp(ltp);
 			Collections.sort(topGainer);
 		}
-		if(topLoser.contains(aux)){
+		if (topLoser.contains(aux)) {
 			topLoser.get(topLoser.indexOf(aux)).updateLtp(ltp);
 			Collections.sort(topLoser);
 			Collections.reverse(topLoser);

@@ -72,29 +72,32 @@ public class ModifiedMacdAndRSIStrategyImpl implements ModifiedMacdAndRSIStrateg
 		double atrValue = atr.getAtrMap().get(currentTime).getIndicatorValue();
 		if (openTrade == null) {
 			if (isStrongSignal() && isUptrend(candle) && bullishMacdCrossover() && rsiValue > 40 && rsiValue < 80) {
-				return new StrategyModel(PositionType.LONG, atrValue, candle.getClose(), candle.getSecurity(), null, 0,
-						false);
+				return new StrategyModel(candle.getToken(), PositionType.LONG, atrValue, candle.getClose(),
+						candle.getSecurity(), null, 0, false);
 			}
 			if (isStrongSignal() && isDowntrend(candle) && bearishMacdCrossover() && rsiValue > 20 && rsiValue < 60) {
-				return new StrategyModel(PositionType.SHORT, atrValue, candle.getClose(), candle.getSecurity(), null, 0,
-						false);
+				return new StrategyModel(candle.getToken(), PositionType.SHORT, atrValue, candle.getClose(),
+						candle.getSecurity(), null, 0, false);
 			}
 		} else {
 			// always check for stop loss hit before exiting trade and update
 			// reason in db
 			if (takeProfitReached(candle, openTrade)) {
-				return new StrategyModel(openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
-						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
+				return new StrategyModel(candle.getToken(), openTrade.getPosition(), openTrade.getAtr(),
+						candle.getClose(), openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(),
+						true);
 			}
 			if (openTrade.getPosition() == PositionType.LONG
 					&& (bearishMacdCrossover() || isDowntrend(candle) || rsiValue >= 80)) {
-				return new StrategyModel(openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
-						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
+				return new StrategyModel(candle.getToken(), openTrade.getPosition(), openTrade.getAtr(),
+						candle.getClose(), openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(),
+						true);
 			}
 			if (openTrade.getPosition() == PositionType.SHORT
 					&& (bullishMacdCrossover() || isUptrend(candle) || rsiValue <= 20)) {
-				return new StrategyModel(openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
-						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
+				return new StrategyModel(candle.getToken(), openTrade.getPosition(), openTrade.getAtr(),
+						candle.getClose(), openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(),
+						true);
 			}
 		}
 		return null;

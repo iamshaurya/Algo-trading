@@ -266,12 +266,11 @@ public class TradeProcessorImpl implements TradeProcessor {
 					strategyMap.put(e.getKey().getSecurity(), haOhl);
 					break;
 				case OPENING_RANGE_BREAKOUT:
-					cList = tradeService.getPrevDayCandles(e.getKey().getSecurityToken(), IntervalType.DAY,
-							rollDayOfYearByN(cal.getTime(), -4), cal.getTime(), 2);
+					cList = new ArrayList<>();
 					OpeningRangeBreakoutStrategy orb = new OpeningRangeBreakoutStrategyImpl();
 					orb.initializeSetup(cList);
 					strategyMap.put(e.getKey().getSecurity(), orb);
-					double orbLtp = cList.get(cList.size() - 1).getClose();
+					double orbLtp = 0;
 					if (orbLtp <= 1500) {
 						topGainer.add(new StockMovement(e.getKey().getSecurity(), e.getKey().getSecurityToken(), orbLtp,
 								orbLtp));
@@ -312,11 +311,11 @@ public class TradeProcessorImpl implements TradeProcessor {
 
 	private void initializeNifty50Candle() throws IOException, KiteException {
 		Calendar cal = Calendar.getInstance();
-		List<Candle> niftyClist = tradeService.getPrevDayCandles(256265l, IntervalType.DAY,
+		/*List<Candle> niftyClist = tradeService.getPrevDayCandles(256265l, IntervalType.DAY,
 				rollDayOfYearByN(cal.getTime(), -1), cal.getTime(), 1);
 		Collections.sort(niftyClist);
-		Candle auxC = niftyClist.get(niftyClist.size() - 1);
-		nifty50Candle = new Candle("Nifty 50", 256265l, new Date(), auxC.getClose(), 0, 0, 0, 0);
+		Candle auxC = niftyClist.get(niftyClist.size() - 1);*/
+		nifty50Candle = new Candle("Nifty 50", 256265l, new Date(), 0, 0, 0, 0, 0);
 		System.out.println("Nifty 50 :: last day closing :: " + nifty50Candle.getOpen());
 	}
 
@@ -330,14 +329,28 @@ public class TradeProcessorImpl implements TradeProcessor {
 	}
 
 	@Override
-	public synchronized void updateTopGainerLoser(double token, double ltp) {
-		StockMovement aux = new StockMovement("", token, ltp, ltp);
-		if (topGainer.contains(aux)) {
-			topGainer.get(topGainer.indexOf(aux)).updateLtp(ltp);
+	public synchronized void updateTopGainerLoser(Candle candle) {
+		StockMovement aux = new StockMovement("", candle.getToken(), 0, 0);
+		int topGainerIndex = topGainer.indexOf(aux);
+		int topLoserIndex = topGainer.indexOf(aux);
+		if (topGainerIndex > -1) {
+			StockMovement tGainer = topGainer.get(topGainerIndex);
+			if (tGainer.getDayOpeningPrice() == 0) {
+				tGainer.setDayOpeningPrice(candle.getOpen());
+				tGainer.setLtp(candle.getClose());
+			} else {
+				tGainer.updateLtp(candle.getClose());
+			}
 			Collections.sort(topGainer);
 		}
-		if (topLoser.contains(aux)) {
-			topLoser.get(topLoser.indexOf(aux)).updateLtp(ltp);
+		if (topLoserIndex > -1) {
+			StockMovement tLoser = topLoser.get(topLoserIndex);
+			if (tLoser.getDayOpeningPrice() == 0) {
+				tLoser.setDayOpeningPrice(candle.getOpen());
+				tLoser.setLtp(candle.getClose());
+			} else {
+				tLoser.updateLtp(candle.getClose());
+			}
 			Collections.sort(topLoser);
 			Collections.reverse(topLoser);
 		}

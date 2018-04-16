@@ -17,7 +17,7 @@ import lombok.ToString;
 public class StockMovement implements Comparable<StockMovement> {
 	private String security;
 	private double token;
-	private double prevDayLtp;
+	private double dayOpeningPrice;
 	private double ltp;
 	private double move;
 
@@ -25,9 +25,9 @@ public class StockMovement implements Comparable<StockMovement> {
 		super();
 		this.security = security;
 		this.token = token;
-		this.prevDayLtp = prevDayLtp;
+		this.dayOpeningPrice = prevDayLtp;
 		this.ltp = ltp;
-		this.move = (double) ((this.ltp - this.prevDayLtp) / this.prevDayLtp) * 100;
+		this.move = (double) ((this.ltp - this.dayOpeningPrice) / this.dayOpeningPrice) * 100;
 	}
 
 	@Override
@@ -55,7 +55,7 @@ public class StockMovement implements Comparable<StockMovement> {
 	
 	public void updateLtp(double ltp){
 		this.ltp = ltp;
-		this.move = (double) ((this.ltp - this.prevDayLtp) / this.prevDayLtp) * 100;
+		this.move = (double) ((this.ltp - this.dayOpeningPrice) / this.dayOpeningPrice) * 100;
 	}
 
 }

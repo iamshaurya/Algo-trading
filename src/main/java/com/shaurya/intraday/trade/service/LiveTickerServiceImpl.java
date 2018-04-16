@@ -139,7 +139,7 @@ public class LiveTickerServiceImpl implements LiveTickerService {
 					}
 					if (isTimeDiff1Min(tradeStock.get(t.getInstrumentToken()).getPrevCandleCreationTime(),
 							tradeStock.get(t.getInstrumentToken()).getLastTime())) {
-						tradeProcessor.updateTopGainerLoser(t.getInstrumentToken(), t.getLastTradedPrice());
+						tradeProcessor.updateTopGainerLoser(tradeStock.get(t.getInstrumentToken()).getCandle());
 						tradeProcessor.getTradeCall(tradeStock.get(t.getInstrumentToken()).getCandle());
 						initialiseBlankLiveCandle(tradeStock, t);
 					}

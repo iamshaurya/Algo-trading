@@ -24,5 +24,5 @@ public interface TradeProcessor {
 
 	public void updateNifty50Ltp(double ltp);
 
-	public void updateTopGainerLoser(double token, double ltp);
+	public void updateTopGainerLoser(Candle candle);
 }

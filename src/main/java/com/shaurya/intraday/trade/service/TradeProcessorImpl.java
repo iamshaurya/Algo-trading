@@ -332,7 +332,7 @@ public class TradeProcessorImpl implements TradeProcessor {
 	public synchronized void updateTopGainerLoser(Candle candle) {
 		StockMovement aux = new StockMovement("", candle.getToken(), 0, 0);
 		int topGainerIndex = topGainer.indexOf(aux);
-		int topLoserIndex = topGainer.indexOf(aux);
+		int topLoserIndex = topLoser.indexOf(aux);
 		if (topGainerIndex > -1) {
 			StockMovement tGainer = topGainer.get(topGainerIndex);
 			if (tGainer.getDayOpeningPrice() == 0) {

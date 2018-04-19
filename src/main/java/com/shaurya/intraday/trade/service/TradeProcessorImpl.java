@@ -65,6 +65,7 @@ public class TradeProcessorImpl implements TradeProcessor {
 	private List<StockMovement> topGainer;
 	private List<StockMovement> topLoser;
 	private Candle nifty50Candle;
+	private Calendar first15MinTime;
 	@Autowired
 	private TradeService tradeService;
 	@Autowired
@@ -76,7 +77,6 @@ public class TradeProcessorImpl implements TradeProcessor {
 	public synchronized StrategyModel getTradeCall(Candle candle) {
 		System.out.println("candle data " + candle.toString());
 		try {
-			int numberOdTradesForDay = tradeService.fetchNumberOfTradesForTheDay();
 			StrategyModel openTrade = tradeService.fetchOpenTradeBySecurity(candle.getSecurity());
 			StrategyModel tradeCall = strategyMap.get(candle.getSecurity()).processTrades(candle, openTrade, true);
 
@@ -105,7 +105,7 @@ public class TradeProcessorImpl implements TradeProcessor {
 					tradeCall = (tradeCall = strategyMap.get(candle.getSecurity()).processTrades(candle, null,
 							false)) != null ? tradeCall : null;
 				}
-				if (tradeCall != null && numberOdTradesForDay < 4) {
+				if (tradeCall != null) {
 					switch (tradeCall.getPosition()) {
 					case LONG:
 						if (isPreferedPosition(tradeCall) && greenCandle(nifty50Candle) && topGainerStock(tradeCall)) {
@@ -206,12 +206,12 @@ public class TradeProcessorImpl implements TradeProcessor {
 
 	private boolean topGainerStock(StrategyModel tradeCall) {
 		StockMovement aux = new StockMovement(tradeCall.getSecurity(), tradeCall.getSecurityToken(), 0, 0);
-		return topGainer.contains(aux) && (topGainer.indexOf(aux) < 10);
+		return topGainer.contains(aux) && (topGainer.indexOf(aux) < 4);
 	}
 
 	private boolean topLoserStock(StrategyModel tradeCall) {
 		StockMovement aux = new StockMovement(tradeCall.getSecurity(), tradeCall.getSecurityToken(), 0, 0);
-		return topLoser.contains(aux) && (topLoser.indexOf(aux) < 10);
+		return topLoser.contains(aux) && (topLoser.indexOf(aux) < 4);
 	}
 
 	@Override
@@ -307,6 +307,11 @@ public class TradeProcessorImpl implements TradeProcessor {
 		}
 		// tradeService.deletePrevDayCandlesAndStrategy();
 		initializeNifty50Candle();
+		cal.set(Calendar.HOUR_OF_DAY, 9);
+		cal.set(Calendar.MINUTE, 30);
+		cal.set(Calendar.SECOND, 0);
+		cal.set(Calendar.MILLISECOND, 0);
+		first15MinTime = cal;
 	}
 
 	private void initializeNifty50Candle() throws IOException, KiteException {
@@ -330,30 +335,40 @@ public class TradeProcessorImpl implements TradeProcessor {
 
 	@Override
 	public synchronized void updateTopGainerLoser(Candle candle) {
-		StockMovement aux = new StockMovement("", candle.getToken(), 0, 0);
-		int topGainerIndex = topGainer.indexOf(aux);
-		int topLoserIndex = topLoser.indexOf(aux);
-		if (topGainerIndex > -1) {
-			StockMovement tGainer = topGainer.get(topGainerIndex);
-			if (tGainer.getDayOpeningPrice() == 0) {
-				tGainer.setDayOpeningPrice(candle.getOpen());
-				tGainer.setLtp(candle.getClose());
-			} else {
+		if (candle.getTime().before(first15MinTime.getTime())) {
+			StockMovement aux = new StockMovement("", candle.getToken(), 0, 0);
+			int topGainerIndex = topGainer.indexOf(aux);
+			int topLoserIndex = topLoser.indexOf(aux);
+			if (topGainerIndex > -1) {
+				StockMovement tGainer = topGainer.get(topGainerIndex);
+				if (tGainer.getDayOpeningPrice() == 0) {
+					tGainer.setDayOpeningPrice(candle.getOpen());
+				}
 				tGainer.updateLtp(candle.getClose());
+				Collections.sort(topGainer);
 			}
-			Collections.sort(topGainer);
-		}
-		if (topLoserIndex > -1) {
-			StockMovement tLoser = topLoser.get(topLoserIndex);
-			if (tLoser.getDayOpeningPrice() == 0) {
-				tLoser.setDayOpeningPrice(candle.getOpen());
-				tLoser.setLtp(candle.getClose());
-			} else {
+			if (topLoserIndex > -1) {
+				StockMovement tLoser = topLoser.get(topLoserIndex);
+				if (tLoser.getDayOpeningPrice() == 0) {
+					tLoser.setDayOpeningPrice(candle.getOpen());
+				}
 				tLoser.updateLtp(candle.getClose());
+				Collections.sort(topLoser);
+				Collections.reverse(topLoser);
 			}
-			Collections.sort(topLoser);
-			Collections.reverse(topLoser);
+		} else if (candle.getTime().getTime() == first15MinTime.getTimeInMillis()){
+			System.out.println("############### TOP 4 GAINER ##############");
+			System.out.println("1. "+topGainer.get(0).getSecurity());
+			System.out.println("2. "+topGainer.get(1).getSecurity());
+			System.out.println("3. "+topGainer.get(2).getSecurity());
+			System.out.println("4. "+topGainer.get(3).getSecurity());
+			System.out.println("############### TOP 4 LOSER ##############");
+			System.out.println("1. "+topLoser.get(0).getSecurity());
+			System.out.println("2. "+topLoser.get(1).getSecurity());
+			System.out.println("3. "+topLoser.get(2).getSecurity());
+			System.out.println("4. "+topLoser.get(3).getSecurity());
 		}
+		
 	}
 
 	@Override
@@ -368,6 +383,7 @@ public class TradeProcessorImpl implements TradeProcessor {
 		nifty50Candle = null;
 		topGainer = null;
 		topLoser = null;
+		first15MinTime = null;
 	}
 
 }

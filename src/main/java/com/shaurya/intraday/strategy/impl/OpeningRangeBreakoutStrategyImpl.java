@@ -20,7 +20,6 @@ import com.shaurya.intraday.strategy.OpeningRangeBreakoutStrategy;
  */
 public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStrategy {
 	// Modified macd of 12,26,9
-	private TreeSet<Candle> candle5Set;
 	private TreeSet<Candle> candle15Set;
 	private Candle first15minCandle;
 	private boolean dayTradeDone;
@@ -34,47 +33,20 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
 	@Override
 	public StrategyModel processTrades(Candle candle, StrategyModel openTrade, boolean updateSetup) {
 		if (updateSetup) {
-			candle5Set.add(candle);
-			Candle candle5min = form5MinCandle();
-			if(candle5min != null){
-				updateSetup(candle5min);
-				if (first15minCandle == null) {
-					candle15Set.add(candle5min);
-					first15minCandle = form15MinCandle();
-				}
-				if (first15minCandle != null) {
-					return getTradeCall(candle5min, openTrade);
-				}
+			candle15Set.add(candle);
+			Candle candle15min = form15MinCandle();
+			if (candle15min != null) {
+				updateSetup(candle15min);
+				first15minCandle = first15minCandle == null ? candle15min : first15minCandle;
+				return getTradeCall(candle15min, openTrade);
 			}
 		}
 		return null;
 	}
 
-	private Candle form5MinCandle() {
-		Candle candle5min = null;
-		if (candle5Set.size() == 5) {
-			int i = 0;
-			Iterator<Candle> cItr = candle5Set.iterator();
-			while (cItr.hasNext()) {
-				Candle c = cItr.next();
-				if (i == 0) {
-					candle5min = new Candle(c.getSecurity(), c.getToken(), c.getTime(), c.getOpen(), c.getHigh(),
-							c.getLow(), c.getClose(), 0);
-				} else {
-					candle5min.setClose(c.getClose());
-					candle5min.setHigh(Math.max(candle5min.getHigh(), c.getHigh()));
-					candle5min.setLow(Math.min(candle5min.getLow(), c.getLow()));
-				}
-				i++;
-			}
-			candle5Set.clear();
-		}
-		return candle5min;
-	}
-	
 	private Candle form15MinCandle() {
 		Candle candle15min = null;
-		if (candle15Set.size() == 3) {
+		if (candle15Set.size() == 15) {
 			int i = 0;
 			Iterator<Candle> cItr = candle15Set.iterator();
 			while (cItr.hasNext()) {
@@ -99,14 +71,15 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
 		if (openTrade == null) {
 			if (!dayTradeDone && isTradeableRange() && candle.getClose() > first15minCandle.getHigh()) {
 				dayTradeDone = true;
-				tradeCall = new StrategyModel(candle.getToken(), PositionType.LONG,
-						(0.5 * (candle.getClose() - first15minCandle.getLow())), candle.getClose(),
+				double longSl = Math.min((candle.getClose() - first15minCandle.getLow()), (0.015 * candle.getClose()));
+				tradeCall = new StrategyModel(candle.getToken(), PositionType.LONG, (0.5 * longSl), candle.getClose(),
 						candle.getSecurity(), null, 0, false);
 			}
 			if (!dayTradeDone && isTradeableRange() && candle.getClose() < first15minCandle.getLow()) {
 				dayTradeDone = true;
-				tradeCall = new StrategyModel(candle.getToken(), PositionType.SHORT,
-						(0.5 * (first15minCandle.getHigh() - candle.getClose())), candle.getClose(),
+				double shortSl = Math.min((first15minCandle.getHigh() - candle.getClose()),
+						(0.015 * candle.getClose()));
+				tradeCall = new StrategyModel(candle.getToken(), PositionType.SHORT, (0.5 * shortSl), candle.getClose(),
 						candle.getSecurity(), null, 0, false);
 			}
 		} else {
@@ -147,14 +120,12 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
 	@Override
 	public void initializeSetup(List<Candle> cList) {
 		candle15Set = new TreeSet<>();
-		candle5Set = new TreeSet<>();
 		dayTradeDone = false;
 	}
 
 	@Override
 	public void destroySetup() {
 		candle15Set = null;
-		candle5Set = null;
 		first15minCandle = null;
 		dayTradeDone = false;
 

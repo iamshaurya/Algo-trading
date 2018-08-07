@@ -184,7 +184,7 @@ public class BackTestService {
 			break;
 		case OPENING_RANGE_BREAKOUT:
 			niftyClist = new ArrayList<>();
-			cList = tradeService.getPrevDayCandles(token, IntervalType.MINUTE_30, fromDate, toDateInit, 200);
+			cList = new ArrayList<>();
 			strategy = new OpeningRangeBreakoutStrategyImpl();
 			strategy.initializeSetup(cList);
 			break;

@@ -125,13 +125,13 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
 
 	@Override
 	public void destroySetup() {
-		candle15Set = null;
+		/*candle15Set = null;*/
 		first15minCandle = null;
 		dayTradeDone = false;
 
-		/*
-		 * candle5Set.clear(); candle30Set.clear();
-		 */
+		
+		candle15Set.clear();
+		 
 
 	}
 

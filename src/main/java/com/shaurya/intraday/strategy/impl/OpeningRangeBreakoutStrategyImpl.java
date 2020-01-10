@@ -19,7 +19,6 @@ import com.shaurya.intraday.strategy.OpeningRangeBreakoutStrategy;
  *
  */
 public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStrategy {
-	// Modified macd of 12,26,9
 	private TreeSet<Candle> candle15Set;
 	private Candle first15minCandle;
 	private boolean dayTradeDone;

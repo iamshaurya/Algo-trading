@@ -36,7 +36,6 @@ import com.shaurya.intraday.strategy.impl.HeikinAshiOHLStrategyImpl;
 import com.shaurya.intraday.strategy.impl.OpenHighLowStrategyImpl;
 import com.shaurya.intraday.strategy.impl.OpeningRangeBreakoutStrategyImpl;
 import com.shaurya.intraday.strategy.impl.SuperTrendStrategyImpl;
-import com.shaurya.intraday.trade.service.StockScreener;
 import com.shaurya.intraday.trade.service.TradeService;
 import com.shaurya.intraday.util.MailSender;
 import com.shaurya.intraday.util.StringUtil;
@@ -52,8 +51,6 @@ public class BackTestService {
 	@Autowired
 	private TradeService tradeService;
 	@Autowired
-	private StockScreener stockScreener;
-	@Autowired
 	private MailAccount mailAccount;
 	private Strategy strategy;
 	private Long token;
@@ -64,7 +61,7 @@ public class BackTestService {
 			throws IOException, KiteException, InterruptedException {
 		int itrCount = duration/30;
 		resultMap = new HashMap<String, List<BacktestResult>>();
-		List<String> stocks = stockScreener.fetchTopAnnualVolatileStockForBacktest();
+		List<String> stocks = new ArrayList<>();
 		for (String s : stocks) {
 			try {
 				backtest(position, strategyType, s, quantity, duration);

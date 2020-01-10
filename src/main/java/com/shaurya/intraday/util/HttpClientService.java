@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -21,19 +22,16 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClients;
-//import org.apache.logging.log4j.LogManager;
-//import org.apache.logging.log4j.Logger;
 
 /**
  * @author apasha
  *
  */
+@Slf4j
 public class HttpClientService {
 	private static final String APPLICATION_JSON = "application/json";
 
 	private static final String CALL_FAILED_MSG = "Http client call failed";
-	// private static final Logger log =
-	// LogManager.getLogger("HttpClientService");
 	private static final String UTF_8 = "UTF-8";
 
 	public static Object executeDeleteRequest(final String url, final List<NameValuePair> urlParameters) {
@@ -44,11 +42,9 @@ public class HttpClientService {
 		try {
 			response = client.execute(delete);
 		} catch (final IOException e) {
-			// System.err.println("Http client call failed");
-			// log.error("Http client call failed");
+			log.error("Http client call failed");
 		} catch (final Exception ex) {
-			// System.err.println("Http client call failed");
-			// log.error("Http client call failed");
+			log.error("Http client call failed");
 		}
 		return response;
 	}
@@ -65,11 +61,9 @@ public class HttpClientService {
 			System.out.println("GET request :: " + url);
 			response = client.execute(get);
 		} catch (final IOException e) {
-			// System.err.println("Http client call failed");
-			// log.error("Http client call failed");
+			log.error("Http client call failed");
 		} catch (final Exception ex) {
-			// System.err.println("Http client call failed");
-			// log.error("Http client call failed");
+			log.error("Http client call failed");
 		}
 		return response;
 	}
@@ -90,11 +84,9 @@ public class HttpClientService {
 		try {
 			response = client.execute(get);
 		} catch (final IOException e) {
-			// System.err.println("Http client call failed");
-			// log.error("Http client call failed");
+			log.error("Http client call failed");
 		} catch (final Exception ex) {
-			// System.err.println("Http client call failed");
-			// log.error("Http client call failed");
+			log.error("Http client call failed");
 		}
 		return response;
 	}
@@ -110,16 +102,14 @@ public class HttpClientService {
 				post.setHeader(head.getKey(), head.getValue());
 			}
 			post.setEntity(new StringEntity(jsonString));
-			// logger.info("Performing POST request for ur : " + url);
+			log.info("Performing POST request for ur : " + url);
 			response = client.execute(post);
 		} catch (final IOException e) {
-			// log.error(CALL_FAILED_MSG + e);
-			// logger.error("Http client call failed");
-			// logger.error(StringUtility.getStackTraceInStringFmt(e));
+			log.error(CALL_FAILED_MSG + e);
+			log.error("Http client call failed {}", e);
 		} catch (final Exception ex) {
-			// log.error(CALL_FAILED_MSG + ex);
-			// logger.error("Http client call failed");
-			// logger.error(StringUtility.getStackTraceInStringFmt(ex));
+			log.error(CALL_FAILED_MSG + ex);
+			log.error("Http client call failed {}", ex);
 		}
 		return response;
 	}
@@ -131,18 +121,12 @@ public class HttpClientService {
 		final HttpPost post = new HttpPost(url);
 		try {
 			post.setEntity(new UrlEncodedFormEntity(nameValuePairs, "UTF-8"));
-			// System.out.println("Performing POST request for ur : " + url);
-			// System.out.println("RequestParam passed are :\t" +
-			// nameValuePairs.toString());
-			// log.error("email nvp:"+ nameValuePairs);
+			log.debug("email nvp:"+ nameValuePairs);
 			response = client.execute(post);
-			// System.out.println("Received response for the Request" + url);
 		} catch (final IOException e) {
-			// System.err.println("Http client call failed");
-			// log.error("Http client call failed");
+			log.error("Http client call failed {}", e);
 		} catch (final Exception ex) {
-			// System.err.println("Http client call failed");
-			// log.error("Http client call failed");
+			log.error("Http client call failed {}", ex);
 		}
 		return response;
 	}
@@ -155,11 +139,9 @@ public class HttpClientService {
 			put.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 			response = client.execute(put);
 		} catch (final IOException e) {
-			// System.err.println("Http client call failed");
-			// log.error("Http client call failed");
+			log.error("Http client call failed {}", e);
 		} catch (final Exception ex) {
-			// System.err.println("Http client call failed");
-			// log.error("Http client call failed");
+			log.error("Http client call failed {}", ex);
 		}
 		return response;
 	}
@@ -175,16 +157,14 @@ public class HttpClientService {
 				put.setHeader(head.getKey(), head.getValue());
 			}
 			put.setEntity(new StringEntity(jsonString));
-			// logger.info("Performing POST request for ur : " + url);
+			log.info("Performing POST request for ur : " + url);
 			response = client.execute(put);
 		} catch (final IOException e) {
-			// log.error(CALL_FAILED_MSG + e);
-			// logger.error("Http client call failed");
-			// logger.error(StringUtility.getStackTraceInStringFmt(e));
+			log.error(CALL_FAILED_MSG + e);
+			log.error("Http client call failed {}", e);
 		} catch (final Exception ex) {
-			// log.error(CALL_FAILED_MSG + ex);
-			// logger.error("Http client call failed");
-			// logger.error(StringUtility.getStackTraceInStringFmt(ex));
+			log.error(CALL_FAILED_MSG + ex);
+			log.error("Http client call failed {}", ex);
 		}
 		return response;
 	}

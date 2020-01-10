@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package com.shaurya.intraday.trade.service;
 
@@ -16,12 +16,13 @@ import com.zerodhatech.kiteconnect.kitehttp.exceptions.KiteException;
  */
 public interface LoginService {
 
-	public String getLoginUrl();
+  public String getLoginUrl();
 
-	public void initializeSdkClient(String requestToken) throws JSONException, KiteException, IOException, com.zerodhatech.kiteconnect.kitehttp.exceptions.KiteException;
+  public void initializeSdkClient(String requestToken)
+      throws JSONException, IOException, KiteException;
 
-	public KiteConnect getSdkClient();
-	
-	public void destroySdkClient();
+  public KiteConnect getSdkClient();
+
+  public void destroySdkClient();
 
 }

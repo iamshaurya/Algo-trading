@@ -5,6 +5,7 @@ package com.shaurya.intraday.trade.service;
 
 import java.io.IOException;
 
+import lombok.extern.slf4j.Slf4j;
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ import com.zerodhatech.models.User;
  * @author Shaurya
  *
  */
+@Slf4j
 @Service
 public class LoginServiceImpl implements LoginService {
 	// singleton
@@ -70,7 +72,7 @@ public class LoginServiceImpl implements LoginService {
 	}
 
 	private void handleSessionExpired() {
-		System.out.println("session expired :: re-authenticate :: sending mail");
+		log.error("session expired :: re-authenticate :: sending mail");
 		MailSender.sendMail(Constants.TO_MAIL, Constants.TO_NAME, Constants.SESSION_EXPIRED_SUBJECT,
 				getSessionExpiredMailBody(), mailAccount);
 	}

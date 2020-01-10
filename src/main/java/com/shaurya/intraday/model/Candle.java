@@ -2,8 +2,6 @@ package com.shaurya.intraday.model;
 
 import java.util.Date;
 
-import com.shaurya.intraday.entity.HistoricalCandle;
-
 import lombok.Getter;
 import lombok.Setter;
 

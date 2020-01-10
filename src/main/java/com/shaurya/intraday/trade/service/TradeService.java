@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package com.shaurya.intraday.trade.service;
 
@@ -20,42 +20,35 @@ import com.zerodhatech.kiteconnect.kitehttp.exceptions.KiteException;
  *
  */
 public interface TradeService {
-	public StrategyModel openTrade(StrategyModel model);
 
-	public StrategyModel closeTrade(StrategyModel model, TradeExitReason reason);
+  public StrategyModel openTrade(StrategyModel model);
 
-	public StrategyModel fetchOpenTradeBySecurity(String security);
+  public StrategyModel closeTrade(StrategyModel model, TradeExitReason reason);
 
-	public Map<StrategyModel, StrategyType> getTradeStrategy();
+  public StrategyModel fetchOpenTradeBySecurity(String security);
 
-	public List<Candle> getPrevDayCandles(String securityName);
+  public Map<StrategyModel, StrategyType> getTradeStrategy();
 
-	public void deletePrevDayCandlesAndStrategy();
+  public Map<StrategyModel, StrategyType> getMonitorStrategy();
 
-	public Map<StrategyModel, StrategyType> getMonitorStrategy();
+  public Map<Long, String> getNameTokenMap();
 
-	public void incrementDayForMonitorStocks();
+  public Map<String, Long> getTokenNameMap();
 
-	public Map<Long, String> getNameTokenMap();
+  public void sendPNLStatement();
 
-	public Map<String, Long> getTokenNameMap();
+  public List<Candle> getPrevDayCandles(Long instrumentToken, Date currentDate)
+      throws IOException, KiteException;
 
-	public void createHistoricalCandle(Candle candle);
+  public void testIndicator() throws IOException, KiteException;
 
-	public void sendPNLStatement();
+  public void simulation(Long security);
 
-	public List<Candle> getPrevDayCandles(Long instrumentToken, Date currentDate) throws IOException, KiteException;
+  public List<Candle> getPrevDayCandles(Long instrumentToken, IntervalType interval, Date from,
+      Date to,
+      int candleCount);
 
-	public void testIndicator() throws IOException, KiteException;
+  public void updateStrategyStocks(List<StrategyModel> smList);
 
-	public void simulation(Long security);
-
-	public List<Candle> getPrevDayCandles(Long instrumentToken, IntervalType interval, Date from, Date to,
-			int candleCount);
-
-	public void updateStrategyStocks(List<StrategyModel> smList);
-
-	public Map<StrategyModel, StrategyType> getAllTradeStrategy();
-
-	Integer fetchNumberOfTradesForTheDay();
+  public Map<StrategyModel, StrategyType> getAllTradeStrategy();
 }

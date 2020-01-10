@@ -3,23 +3,15 @@
  */
 package com.shaurya.intraday.builder;
 
-import static com.shaurya.intraday.util.HelperUtil.getDateFromTickTimestamp;
-
-import java.util.Date;
-import java.util.Map;
-
-import org.joda.time.DateTime;
-
-import com.shaurya.intraday.entity.HistoricalCandle;
 import com.shaurya.intraday.entity.Trade;
 import com.shaurya.intraday.entity.TradeStrategy;
-import com.shaurya.intraday.entity.VolatileStock;
 import com.shaurya.intraday.enums.PositionType;
 import com.shaurya.intraday.enums.StrategyType;
 import com.shaurya.intraday.model.Candle;
 import com.shaurya.intraday.model.StrategyModel;
 import com.zerodhatech.models.HistoricalData;
-import com.zerodhatech.models.Tick;
+import java.util.Date;
+import org.joda.time.DateTime;
 
 /**
  * @author Shaurya
@@ -52,36 +44,6 @@ public class TradeBuilder {
 		return model;
 	}
 
-	public static HistoricalCandle convert(Tick tick, Map<Long, String> nameTokenMap) {
-		HistoricalCandle hc = new HistoricalCandle();
-		hc.setClose(tick.getClosePrice());
-		hc.setDay(1);
-		hc.setHigh(tick.getHighPrice());
-		hc.setLow(tick.getLowPrice());
-		hc.setOpen(tick.getOpenPrice());
-		hc.setSecurityName(nameTokenMap.get(tick.getInstrumentToken()));
-		hc.setTimestamp(getDateFromTickTimestamp(tick.getTickTimestamp()));
-		return hc;
-	}
-
-	public static HistoricalCandle convertToHistoricalcandle(Candle ca) {
-		HistoricalCandle hc = new HistoricalCandle();
-		hc.setClose(ca.getClose());
-		hc.setDay(1);
-		hc.setHigh(ca.getHigh());
-		hc.setLow(ca.getLow());
-		hc.setOpen(ca.getOpen());
-		hc.setSecurityName(ca.getSecurity());
-		hc.setTimestamp(getDateFromTickTimestamp(ca.getTime()));
-		return hc;
-	}
-
-	public static Candle reverseConvert(HistoricalCandle hc, long token) {
-		return new Candle(hc.getSecurityName(), token, hc.getTimestamp(), hc.getOpen(), hc.getHigh(), hc.getLow(),
-				hc.getClose(), 0);
-
-	}
-
 	public static Candle convertHistoricalDataToCandle(HistoricalData hd, String security, long token) {
 		Date time = new DateTime(hd.timeStamp).toDate();
 		return new Candle(security, token, time, hd.open, hd.high, hd.low, hd.close, hd.volume);
@@ -97,13 +59,6 @@ public class TradeBuilder {
 		ts.setStrategyType(StrategyType.OPENING_RANGE_BREAKOUT.getId());
 		ts.setMarginPortion((double) 2000);
 		return ts;
-	}
-
-	public static VolatileStock convertToVolatileStock(String symbol) {
-		VolatileStock vs = new VolatileStock();
-		vs.setSymbol(symbol);
-		vs.setState((byte) 0);
-		return vs;
 	}
 
 }

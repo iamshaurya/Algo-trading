@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package com.shaurya.intraday.trade.service;
 
@@ -16,13 +16,10 @@ import com.zerodhatech.kiteconnect.kitehttp.exceptions.KiteException;
  *
  */
 public interface TradeProcessor {
-	public StrategyModel getTradeCall(Candle candle);
 
-	public void initializeStrategyMap() throws IOException, KiteException, JSONException;
+  public StrategyModel getTradeCall(Candle candle);
 
-	public void destroyStrategyMap();
+  public void initializeStrategyMap() throws IOException, KiteException, JSONException;
 
-	public void updateNifty50Ltp(double ltp);
-
-	public void updateTopGainerLoser(Candle candle);
+  public void destroyStrategyMap();
 }

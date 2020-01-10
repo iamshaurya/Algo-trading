@@ -21,7 +21,7 @@ public class JsonParser {
 	 * strings
 	 *
 	 * @param json
-	 * @param class1
+	 * @param cls
 	 * @return
 	 */
 	public static <T> List<T> generalJsonListToObjectList(final String json, final Class<?> cls) {
@@ -91,7 +91,7 @@ public class JsonParser {
 	 * string is being mapped from getters of your pojo
 	 *
 	 * @author prashantkumar
-	 * @param object
+	 * @param list
 	 * @return Json from Object
 	 */
 	public static String objectListToJson(final List<? extends Object> list) {
@@ -114,7 +114,7 @@ public class JsonParser {
 	 * string is being mapped from getters of your pojo
 	 *
 	 * @author prashantkumar
-	 * @param object
+	 * @param obj
 	 * @return Json from Object
 	 */
 	public static String objectToJson(final Object obj) {

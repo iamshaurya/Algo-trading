@@ -31,8 +31,6 @@ public class SetupServiceImpl {
 	private TradeProcessor processor;
 	@Autowired
 	private LiveTickerService liveTickerService;
-	@Autowired
-	private StockScreener screener;
 
 	public void startup() throws KiteException, IOException, JSONException {
 		KiteConnect sdkClient = loginService.getSdkClient();
@@ -66,15 +64,6 @@ public class SetupServiceImpl {
 		}
 		tradeService.sendPNLStatement();
 		// tradeService.incrementDayForMonitorStocks();
-	}
-
-	public void stockScreener() throws IOException, KiteException {
-		screener.updateStrategyStocks();
-		KiteConnect sdkClient = loginService.getSdkClient();
-		if (sdkClient != null) {
-			sdkClient.logout();
-			loginService.destroySdkClient();
-		}
 	}
 
 	public void startupLogin() {

@@ -167,6 +167,11 @@ public class LiveTickerServiceImpl implements LiveTickerService {
 			public void onError(KiteException kiteException) {
 				// handle here.
 			}
+
+			@Override
+			public void onError(String s) {
+
+			}
 		});
 
 		tickerProvider.setTryReconnection(true);

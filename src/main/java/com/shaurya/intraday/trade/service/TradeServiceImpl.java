@@ -222,7 +222,7 @@ public class TradeServiceImpl implements TradeService {
 		List<HistoricalData> hd;
 		do {
 			hd = loginService.getSdkClient().getHistoricalData(from, currentDate, instrumentToken.toString(),
-					IntervalType.MINUTE_1.getDesc(), false).dataArrayList;
+					IntervalType.MINUTE_1.getDesc(), false, false).dataArrayList;
 			from = getPrevTradingDate(from);
 		} while (hd == null || hd.size() <= 200);
 
@@ -243,7 +243,7 @@ public class TradeServiceImpl implements TradeService {
 			do {
 				Thread.sleep(500);
 				hd = loginService.getSdkClient().getHistoricalData(from, to, instrumentToken.toString(),
-						interval.getDesc(), false).dataArrayList;
+						interval.getDesc(), false, false).dataArrayList;
 				from = getPrevTradingDate(from);
 			} while (hd == null || hd.size() <= candleCount);
 			for (HistoricalData d : hd) {

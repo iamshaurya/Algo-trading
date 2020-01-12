@@ -11,4 +11,6 @@ import com.shaurya.intraday.entity.KiteAccount;
  */
 public interface AccountService {
 	public KiteAccount getAccount();
+
+  void updateFundBalance(Integer totalFund);
 }

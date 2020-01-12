@@ -57,7 +57,7 @@ public class StrategyModel {
 		int ai = (int) (atr * 100);
 		double ad = Math.ceil((double) ai / 10);
 		double fa = (double) ad / 10;
-		this.sl = fa * 2;
+		this.sl = fa;
 	}
 
 	public void trailSl(double tsl) {

@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @ComponentScan("com.shaurya")
 @SpringBootApplication
-//@EnableScheduling
+@EnableScheduling
 public class ShauryaIntradayApplication extends SpringBootServletInitializer{
 
 	public static void main(String[] args) {

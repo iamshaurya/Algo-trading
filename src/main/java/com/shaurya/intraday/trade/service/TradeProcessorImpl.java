@@ -90,14 +90,17 @@ public class TradeProcessorImpl implements TradeProcessor {
               false)) != null ? tradeCall : null;
         }
         if (tradeCall != null) {
+          Integer quantity =
+              (metadataMap.get(tradeCall.getSecurity()).getQuantity() == 0) ? getTradeQuantity(
+                  metadataMap.get(tradeCall.getSecurity()).getTradeMargin(),
+                  tradeCall.getTradePrice(),
+                  metadataMap.get(tradeCall.getSecurity()).getMarginMultiplier())
+                  : metadataMap.get(tradeCall.getSecurity()).getQuantity();
           switch (tradeCall.getPosition()) {
             case LONG:
               if (isPreferedPosition(tradeCall)) {
                 // make call for long cover order
-                tradeCall.setQuantity(getTradeQuantity(
-                    metadataMap.get(tradeCall.getSecurity()).getTradeMargin(),
-                    tradeCall.getTradePrice(),
-                    metadataMap.get(tradeCall.getSecurity()).getMarginMultiplier()));
+                tradeCall.setQuantity(quantity);
                 tradeCall = tradeOrderService.placeEntryCoverOrder(tradeCall);
                 if (tradeCall.getOrderId() == null) { // handling
                   // failure
@@ -120,10 +123,7 @@ public class TradeProcessorImpl implements TradeProcessor {
             case SHORT:
               if (isPreferedPosition(tradeCall)) {
                 // make call for short cover order
-                tradeCall.setQuantity(getTradeQuantity(
-                    metadataMap.get(tradeCall.getSecurity()).getTradeMargin(),
-                    tradeCall.getTradePrice(),
-                    metadataMap.get(tradeCall.getSecurity()).getMarginMultiplier()));
+                tradeCall.setQuantity(quantity);
                 tradeCall = tradeOrderService.placeEntryCoverOrder(tradeCall);
                 if (tradeCall.getOrderId() == null) { // handling
                   // failure

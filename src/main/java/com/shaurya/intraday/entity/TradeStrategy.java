@@ -40,4 +40,6 @@ public class TradeStrategy {
 	private Double marginMultiplier;
 	@Column(name = "margin_portion")
 	private Double marginPortion;
+	@Column(name = "quantity")
+	private Integer quantity;
 }

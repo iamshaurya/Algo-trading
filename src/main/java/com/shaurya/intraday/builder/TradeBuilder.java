@@ -58,6 +58,7 @@ public class TradeBuilder {
 		ts.setSecurityToken(sm.getSecurityToken());
 		ts.setStrategyType(StrategyType.OPENING_RANGE_BREAKOUT.getId());
 		ts.setMarginPortion((double) 2000);
+		ts.setQuantity(sm.getQuantity());
 		return ts;
 	}
 

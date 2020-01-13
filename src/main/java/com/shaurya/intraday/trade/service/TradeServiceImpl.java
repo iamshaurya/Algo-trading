@@ -148,6 +148,7 @@ public class TradeServiceImpl implements TradeService {
         model.setPreferedPosition(PositionType.getEnumById(sl.getPreferedPosition()));
         model.setMarginMultiplier(sl.getMarginMultiplier());
         model.setMarginPortion(sl.getMarginPortion());
+        model.setQuantity(sl.getQuantity());
         sMap.put(model, StrategyType.getEnumById(sl.getStrategyType()));
       }
     }
@@ -166,6 +167,7 @@ public class TradeServiceImpl implements TradeService {
         model.setSecurityToken(sl.getSecurityToken());
         model.setPreferedPosition(PositionType.getEnumById(sl.getPreferedPosition()));
         model.setMarginMultiplier(sl.getMarginMultiplier());
+        model.setQuantity(sl.getQuantity());
         sMap.put(model, StrategyType.getEnumById(sl.getStrategyType()));
       }
     }

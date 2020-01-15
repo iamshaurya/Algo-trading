@@ -3,6 +3,7 @@
  */
 package com.shaurya.intraday.trade.service;
 
+import com.shaurya.intraday.util.JsonParser;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +59,7 @@ public class TradeOrderServiceImpl implements TradeOrderService {
     orderParams.transactionType = getTransactionType(model.getPosition());
     Order order = null;
     try {
+      log.error("Order params {}", JsonParser.objectToJson(orderParams));
       order = loginService.getSdkClient().placeOrder(orderParams, VARIETY_COVER_ORDER);
       model.setOrderId(order.orderId);
     } catch (JSONException | IOException | KiteException e) {

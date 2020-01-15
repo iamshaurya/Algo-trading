@@ -40,6 +40,7 @@ public class TradeOrderServiceImpl implements TradeOrderService {
   private static final String PRODUCT_MIS = "MIS";
   private static final String ORDER_TYPE_MARKET = "MARKET";
   private static final String EXCHANGE_NSE = "NSE";
+  private static final String EXCHANGE_NFO = "NFO";
   private static final String VARIETY_COVER_ORDER = "co";
   @Autowired
   private LoginService loginService;
@@ -49,7 +50,7 @@ public class TradeOrderServiceImpl implements TradeOrderService {
   @Override
   public StrategyModel placeEntryCoverOrder(StrategyModel model) {
     OrderParams orderParams = new OrderParams();
-    orderParams.exchange = EXCHANGE_NSE;
+    orderParams.exchange = EXCHANGE_NFO;
     orderParams.tradingsymbol = model.getSecurity();
     orderParams.orderType = ORDER_TYPE_MARKET;
     orderParams.product = PRODUCT_MIS;

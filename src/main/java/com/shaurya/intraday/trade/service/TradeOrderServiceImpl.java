@@ -61,7 +61,7 @@ public class TradeOrderServiceImpl implements TradeOrderService {
       order = loginService.getSdkClient().placeOrder(orderParams, VARIETY_COVER_ORDER);
       model.setOrderId(order.orderId);
     } catch (JSONException | IOException | KiteException e) {
-      log.error("Error in placing entry cover order :: " + e.getCause());
+      log.error("Error in placing entry cover order :: {}" + e);
       MailSender.sendMail(Constants.TO_MAIL, Constants.TO_NAME, Constants.FAILED_ENTRY_COVER_ORDER,
           e.getMessage(), mailAccount);
     }

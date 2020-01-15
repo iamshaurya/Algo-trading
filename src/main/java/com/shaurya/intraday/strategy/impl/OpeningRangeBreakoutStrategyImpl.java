@@ -98,6 +98,8 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
   }
 
   private StrategyModel getTradeCall(Candle candle, StrategyModel openTrade) {
+    log.error("15min range high {}, low {}", first15minCandle.getHigh(), first15minCandle.getLow());
+    log.error("current close {}", candle.getClose());
     StrategyModel tradeCall = null;
     if (openTrade == null) {
       if (candle.getClose() > first15minCandle.getHigh()) {

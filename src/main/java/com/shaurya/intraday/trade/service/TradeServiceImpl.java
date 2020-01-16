@@ -96,7 +96,11 @@ public class TradeServiceImpl implements TradeService {
     if (openTrade == null) {
       throw new RuntimeException("no open trade found for " + model.toString());
     }
-    openTrade.setTradeExitPrice(model.getTradePrice());
+    Double exitPrice = model.getTradePrice();
+    if (TradeExitReason.HARD_STOP_LOSS_HIT.equals(reason)) {
+      exitPrice = openTrade.getTradeEntryPrice() - openTrade.getSl();
+    }
+    openTrade.setTradeExitPrice(exitPrice);
     openTrade.setStatus((byte) 0);
     openTrade.setTradeExitReason(reason.getId());
     openTrade = tradeRepo.update(openTrade);

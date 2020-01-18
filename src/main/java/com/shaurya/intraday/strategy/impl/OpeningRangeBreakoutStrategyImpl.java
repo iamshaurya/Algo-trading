@@ -137,6 +137,8 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
   public void destroySetup() {
     first15minCandle = null;
     candle15Set.clear();
+    candleSet.clear();
+    candle15Set = null;
     candleSet = null;
   }
 

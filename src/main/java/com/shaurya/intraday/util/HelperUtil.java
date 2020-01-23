@@ -137,7 +137,7 @@ public class HelperUtil {
   }
 
   public static boolean isTimeDiff1Min(Date startTime, Date endTime) {
-    return endTime.getTime() - startTime.getTime() >= 59000;
+    return endTime.getTime() - startTime.getTime() > 59000;
   }
 
   public static boolean isBetweenTradingWindow(Date tickTimestamp) {
@@ -187,6 +187,13 @@ public class HelperUtil {
     Calendar cal = Calendar.getInstance();
     cal.setTime(tTsmp);
     cal.set(Calendar.SECOND, 0);
+    cal.set(Calendar.MILLISECOND, 0);
+    return cal.getTime();
+  }
+
+  public static Date getDateTillSecondsFromTickTimestamp(Date tTsmp) {
+    Calendar cal = Calendar.getInstance();
+    cal.setTime(tTsmp);
     cal.set(Calendar.MILLISECOND, 0);
     return cal.getTime();
   }

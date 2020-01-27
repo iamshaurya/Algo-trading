@@ -25,6 +25,7 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
   private TreeSet<Candle> candle15Set;
   private TreeSet<Candle> candleSet;
   private Candle first15minCandle;
+  private Candle prevCandle;
 
   /*
    * (non-Javadoc)
@@ -44,8 +45,13 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
           Candle candle15min = form15MinCandle();
           first15minCandle = first15minCandle == null ? candle15min : first15minCandle;
         } else {
+          prevCandle = candle5min;
           return getTradeCall(candle5min, openTrade);
         }
+      }
+    } else {
+      if (first15minCandle != null && prevCandle != null) {
+        return getTradeCall(prevCandle, openTrade);
       }
     }
     return null;
@@ -136,6 +142,7 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
   @Override
   public void destroySetup() {
     first15minCandle = null;
+    prevCandle = null;
     candle15Set.clear();
     candleSet.clear();
     candle15Set = null;

@@ -65,9 +65,9 @@ public class TradeServiceImpl implements TradeService {
   @Autowired
   private LoginService loginService;
   @Autowired
-  private TradeProcessor processor;
-  @Autowired
   private MailAccount mailAccount;
+  @Autowired
+  private TradeOrderService tradeOrderService;
 
   /*
    * (non-Javadoc)
@@ -100,11 +100,20 @@ public class TradeServiceImpl implements TradeService {
     if (TradeExitReason.HARD_STOP_LOSS_HIT.equals(reason)) {
       exitPrice = openTrade.getTradeEntryPrice() - openTrade.getSl();
     }
+    Double pl = (exitPrice - openTrade.getTradeEntryPrice()) * openTrade.getQuantity();
+    Double rr = (openTrade.getRisk() / pl);
     openTrade.setTradeExitPrice(exitPrice);
     openTrade.setStatus((byte) 0);
     openTrade.setTradeExitReason(reason.getId());
+    openTrade.setRiskToReward(rr);
+    openTrade.setPl(pl);
+    try {
+      openTrade.setCurrentEquity(tradeOrderService.getTotalMargin());
+    } catch (Exception | KiteException e) {
+      log.error("error in fetching total margin when closing trade {} ", e);
+    }
     openTrade = tradeRepo.update(openTrade);
-
+    //TODO: main a performance metric - create a performance metric table - performance metric - total win, total loss, average win R , average loss R, edge
     return TradeBuilder.reverseConvert(openTrade, false);
   }
 
@@ -153,6 +162,7 @@ public class TradeServiceImpl implements TradeService {
         model.setMarginMultiplier(sl.getMarginMultiplier());
         model.setMarginPortion(sl.getMarginPortion());
         model.setQuantity(sl.getQuantity());
+        model.setLotSize(sl.getLotSize());
         sMap.put(model, StrategyType.getEnumById(sl.getStrategyType()));
       }
     }
@@ -400,7 +410,7 @@ public class TradeServiceImpl implements TradeService {
 
   @Override
   public void simulation(Long security) {
-    List<Candle> cList = null;
+    /*List<Candle> cList = null;
     Calendar prevDayCalFrom = Calendar.getInstance();
     prevDayCalFrom.setTime(new Date());
     prevDayCalFrom.set(Calendar.HOUR_OF_DAY, 9);
@@ -411,7 +421,7 @@ public class TradeServiceImpl implements TradeService {
     cList = getPrevDayCandles(security, IntervalType.MINUTE_1, from, to, 200);
     for (Candle c : cList) {
       processor.getTradeCall(c);
-    }
+    }*/
   }
 
   @Override

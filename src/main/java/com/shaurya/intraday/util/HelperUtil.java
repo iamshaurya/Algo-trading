@@ -170,7 +170,7 @@ public class HelperUtil {
   public static boolean isIntradayClosingTime(Date time) {
     Calendar closeTime = Calendar.getInstance();
     closeTime.set(Calendar.HOUR_OF_DAY, 15);
-    closeTime.set(Calendar.MINUTE, 18);
+    closeTime.set(Calendar.MINUTE, 23);
     Calendar currTime = Calendar.getInstance();
     currTime.setTime(time);
 

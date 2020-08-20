@@ -19,7 +19,6 @@ import lombok.Setter;
 public class StrategyModel {
 	// Risk to reward => 1:2
 	private PositionType position;
-	private double atr;
 	private double sl;
 	private double tp;
 	private double tradePrice;
@@ -27,6 +26,7 @@ public class StrategyModel {
 	private Long securityToken;
 	private String orderId;
 	private int quantity;
+	private int lotSize;
 	private boolean exitOrder;
 	private PositionType preferedPosition;
 	private double marginMultiplier;
@@ -38,26 +38,18 @@ public class StrategyModel {
 
 	}
 
-	public StrategyModel(long token, PositionType position, double atr, double tradePrice, String security,
+	public StrategyModel(long token, PositionType position, double slPoint, double tradePrice, String security,
 			String orderId, int quantity, boolean exitOrder) {
 		this.securityToken = token;
 		this.position = position;
-		this.atr = atr;
 		this.tradePrice = tradePrice;
 		this.security = security;
 		this.orderId = orderId;
 		this.quantity = quantity;
 		this.exitOrder = exitOrder;
-		this.setSl(this.atr);
+		this.sl = slPoint;
 		this.setTp(this.sl);
 		this.trailSl = false;
-	}
-
-	public void setSl(double atr) {
-		int ai = (int) (atr * 100);
-		double ad = Math.ceil((double) ai / 10);
-		double fa = (double) ad / 10;
-		this.sl = fa;
 	}
 
 	public void trailSl(double tsl) {
@@ -70,15 +62,15 @@ public class StrategyModel {
 
 	public void setTp(double sl) {
 		// 50 to keep it open ended
-		int ai = (int) (this.sl * 50 * 100);
+		/*int ai = (int) (this.sl * 50 * 100);
 		double ad = Math.ceil((double) ai / 10);
-		double fa = (double) ad / 10;
-		this.tp = fa;
+		double fa = (double) ad / 10;*/
+		this.tp = sl * 1000;
 	}
 
 	@Override
 	public String toString() {
-		return "StrategyModel [position=" + position + ", atr=" + atr + ", sl=" + sl + ", tp=" + tp + ", tradePrice="
+		return "StrategyModel [position=" + position + ", sl=" + sl + ", tp=" + tp + ", tradePrice="
 				+ tradePrice + ", security=" + security + ", orderId=" + orderId + ", quantity=" + quantity
 				+ ", exitOrder=" + exitOrder + "]";
 	}

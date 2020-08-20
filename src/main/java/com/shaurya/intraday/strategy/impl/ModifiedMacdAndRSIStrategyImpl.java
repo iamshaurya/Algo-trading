@@ -83,19 +83,19 @@ public class ModifiedMacdAndRSIStrategyImpl implements ModifiedMacdAndRSIStrateg
 			// always check for stop loss hit before exiting trade and update
 			// reason in db
 			if (takeProfitReached(candle, openTrade)) {
-				return new StrategyModel(candle.getToken(), openTrade.getPosition(), openTrade.getAtr(),
+				return new StrategyModel(candle.getToken(), openTrade.getPosition(), openTrade.getSl(),
 						candle.getClose(), openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(),
 						true);
 			}
 			if (openTrade.getPosition() == PositionType.LONG
 					&& (bearishMacdCrossover() || isDowntrend(candle) || rsiValue >= 80)) {
-				return new StrategyModel(candle.getToken(), openTrade.getPosition(), openTrade.getAtr(),
+				return new StrategyModel(candle.getToken(), openTrade.getPosition(), openTrade.getSl(),
 						candle.getClose(), openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(),
 						true);
 			}
 			if (openTrade.getPosition() == PositionType.SHORT
 					&& (bullishMacdCrossover() || isUptrend(candle) || rsiValue <= 20)) {
-				return new StrategyModel(candle.getToken(), openTrade.getPosition(), openTrade.getAtr(),
+				return new StrategyModel(candle.getToken(), openTrade.getPosition(), openTrade.getSl(),
 						candle.getClose(), openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(),
 						true);
 			}

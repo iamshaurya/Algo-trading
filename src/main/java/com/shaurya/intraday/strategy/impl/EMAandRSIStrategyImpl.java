@@ -107,19 +107,19 @@ public class EMAandRSIStrategyImpl implements EMAandRSIStrategy {
 			// always check for stop loss hit before exiting trade and update
 			// reason in db
 			if (takeProfitReached(candle, openTrade)) {
-				tradeCall = new StrategyModel(candle.getToken(),openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
+				tradeCall = new StrategyModel(candle.getToken(),openTrade.getPosition(), openTrade.getSl(), candle.getClose(),
 						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
 			}
 			if (stopLossReached(candle, openTrade)) {
-				tradeCall = new StrategyModel(candle.getToken(),openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
+				tradeCall = new StrategyModel(candle.getToken(),openTrade.getPosition(), openTrade.getSl(), candle.getClose(),
 						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
 			}
 			if (openTrade.getPosition() == PositionType.LONG && (bearishBreakout(prevCandle, candle))) {
-				tradeCall = new StrategyModel(candle.getToken(),openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
+				tradeCall = new StrategyModel(candle.getToken(),openTrade.getPosition(), openTrade.getSl(), candle.getClose(),
 						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
 			}
 			if (openTrade.getPosition() == PositionType.SHORT && (bullishBreakout(prevCandle, candle))) {
-				tradeCall = new StrategyModel(candle.getToken(),openTrade.getPosition(), openTrade.getAtr(), candle.getClose(),
+				tradeCall = new StrategyModel(candle.getToken(),openTrade.getPosition(), openTrade.getSl(), candle.getClose(),
 						openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(), true);
 			}
 		}

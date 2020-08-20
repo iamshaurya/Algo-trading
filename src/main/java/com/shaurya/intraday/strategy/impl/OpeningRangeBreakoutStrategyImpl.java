@@ -22,9 +22,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStrategy {
 
-  private TreeSet<Candle> candle15Set;
+  //5 orb min
+  //range candle count = n min/5 | 5/5 = 1
+  private static final int rangeCandleCount = 1;
+  private TreeSet<Candle> rangeCandleSet;
   private TreeSet<Candle> candleSet;
-  private Candle first15minCandle;
+  private Candle firstRangeCandle;
   private Candle prevCandle;
 
   /*
@@ -40,17 +43,17 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
       Candle candle5min = form5MinCandle();
       if (candle5min != null) {
         //form the range
-        if (first15minCandle == null) {
-          candle15Set.add(candle5min);
-          Candle candle15min = form15MinCandle();
-          first15minCandle = first15minCandle == null ? candle15min : first15minCandle;
+        if (firstRangeCandle == null) {
+          rangeCandleSet.add(candle5min);
+          Candle rangeCandle = formRangeCandle();
+          firstRangeCandle = firstRangeCandle == null ? rangeCandle : firstRangeCandle;
         } else {
           prevCandle = candle5min;
           return getTradeCall(candle5min, openTrade);
         }
       }
     } else {
-      if (first15minCandle != null && prevCandle != null) {
+      if (firstRangeCandle != null && prevCandle != null) {
         return getTradeCall(prevCandle, openTrade);
       }
     }
@@ -80,44 +83,43 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
     return candle5min;
   }
 
-  private Candle form15MinCandle() {
-    Candle candle15min = null;
-    if (candle15Set.size() == 3) {
+  private Candle formRangeCandle() {
+    Candle rangeCandle = null;
+    if (rangeCandleSet.size() == rangeCandleCount) {
       int i = 0;
-      Iterator<Candle> cItr = candle15Set.iterator();
+      Iterator<Candle> cItr = rangeCandleSet.iterator();
       while (cItr.hasNext()) {
         Candle c = cItr.next();
         if (i == 0) {
-          candle15min = new Candle(c.getSecurity(), c.getToken(), c.getTime(), c.getOpen(),
+          rangeCandle = new Candle(c.getSecurity(), c.getToken(), c.getTime(), c.getOpen(),
               c.getHigh(),
               c.getLow(), c.getClose(), 0);
         } else {
-          candle15min.setClose(c.getClose());
-          candle15min.setHigh(Math.max(candle15min.getHigh(), c.getHigh()));
-          candle15min.setLow(Math.min(candle15min.getLow(), c.getLow()));
+          rangeCandle.setClose(c.getClose());
+          rangeCandle.setHigh(Math.max(rangeCandle.getHigh(), c.getHigh()));
+          rangeCandle.setLow(Math.min(rangeCandle.getLow(), c.getLow()));
         }
         i++;
       }
-      candle15Set.clear();
+      rangeCandleSet.clear();
     }
-    return candle15min;
+    return rangeCandle;
   }
 
   private StrategyModel getTradeCall(Candle candle, StrategyModel openTrade) {
-    log.error("15min range high {}, low {}", first15minCandle.getHigh(), first15minCandle.getLow());
+    log.error((rangeCandleCount * 5) + "min range high {}, low {}", firstRangeCandle.getHigh(),
+        firstRangeCandle.getLow());
     log.error("current close {}", candle.getClose());
     StrategyModel tradeCall = null;
     if (openTrade == null) {
-      if (candle.getClose() > first15minCandle.getHigh()) {
-        double longSl = Math
-            .min((candle.getClose() - first15minCandle.getLow()), (0.01 * candle.getClose()));
+      if (candle.getClose() > firstRangeCandle.getHigh()) {
+        double longSl = (candle.getClose() - firstRangeCandle.getLow());
         tradeCall = new StrategyModel(candle.getToken(), PositionType.LONG, longSl,
             candle.getClose(),
             candle.getSecurity(), null, 0, false);
       }
-      if (candle.getClose() < first15minCandle.getLow()) {
-        double shortSl = Math.min((first15minCandle.getHigh() - candle.getClose()),
-            (0.01 * candle.getClose()));
+      if (candle.getClose() < firstRangeCandle.getLow()) {
+        double shortSl = (firstRangeCandle.getHigh() - candle.getClose());
         tradeCall = new StrategyModel(candle.getToken(), PositionType.SHORT, shortSl,
             candle.getClose(),
             candle.getSecurity(), null, 0, false);
@@ -135,17 +137,17 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
 
   @Override
   public void initializeSetup(List<Candle> cList) {
-    candle15Set = new TreeSet<>();
+    rangeCandleSet = new TreeSet<>();
     candleSet = new TreeSet<>();
   }
 
   @Override
   public void destroySetup() {
-    first15minCandle = null;
+    firstRangeCandle = null;
     prevCandle = null;
-    candle15Set.clear();
+    rangeCandleSet.clear();
     candleSet.clear();
-    candle15Set = null;
+    rangeCandleSet = null;
     candleSet = null;
   }
 

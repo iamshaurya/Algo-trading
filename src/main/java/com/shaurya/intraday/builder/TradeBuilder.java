@@ -21,7 +21,6 @@ public class TradeBuilder {
 
 	public static Trade convert(StrategyModel model) {
 		Trade trade = new Trade();
-		trade.setAtr(model.getAtr());
 		trade.setOrderId(model.getOrderId());
 		trade.setPositionType((byte) model.getPosition().getId());
 		trade.setQuantity(model.getQuantity());
@@ -33,6 +32,7 @@ public class TradeBuilder {
 		trade.setTradeEntryPrice(model.getTradePrice());
 		trade.setTradeExitPrice(null);
 		trade.setStatus((byte) 1);
+		trade.setRisk(model.getSl() * model.getQuantity());
 		return trade;
 	}
 

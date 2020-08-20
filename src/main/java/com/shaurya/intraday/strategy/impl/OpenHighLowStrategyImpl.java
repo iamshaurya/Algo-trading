@@ -86,12 +86,12 @@ public class OpenHighLowStrategyImpl implements OpenHighLowStrategy {
 			// always check for stop loss hit before exiting trade and update
 			// reason in db
 			if (targetProfitReached(candle, openTrade)) {
-				tradeCall = new StrategyModel(candle.getToken(), openTrade.getPosition(), openTrade.getAtr(),
+				tradeCall = new StrategyModel(candle.getToken(), openTrade.getPosition(), openTrade.getSl(),
 						candle.getClose(), openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(),
 						true);
 			}
 			if (stopLossReached(candle, openTrade)) {
-				tradeCall = new StrategyModel(candle.getToken(), openTrade.getPosition(), openTrade.getAtr(),
+				tradeCall = new StrategyModel(candle.getToken(), openTrade.getPosition(), openTrade.getSl(),
 						candle.getClose(), openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(),
 						true);
 			}

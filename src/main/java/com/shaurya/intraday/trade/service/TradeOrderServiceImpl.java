@@ -72,8 +72,6 @@ public class TradeOrderServiceImpl implements TradeOrderService {
   }
 
   private Double getTriggerPrice(StrategyModel model) {
-    // on system keep sl X3 for minimizing stop loss hunting by high/low
-    // tails and check 0.5% stop loss by candle from our system
     Double tPrice = null;
     switch (model.getPosition()) {
       case LONG:
@@ -161,7 +159,21 @@ public class TradeOrderServiceImpl implements TradeOrderService {
   public Double getTotalMargin() throws JSONException, IOException, KiteException {
     Margin margins = loginService.getSdkClient().getMargins("equity");
     double net = Double.parseDouble(margins.net);
-    return ((0.95 * net));
+    return net;
+  }
+
+  //take 1% risk per trade
+  @Override
+  public Integer getQuantityAsPerRisk(final Double slPoints, final Integer lotSize)
+      throws IOException, KiteException {
+    Double equity = getTotalMargin();
+    Double riskPerTrade = 0.01 * equity;
+    Integer quantity = (int) Math.floor(riskPerTrade / slPoints);
+    if (lotSize != null) {
+      Integer lots = (int) Math.floor(quantity / lotSize);
+      quantity = lots * lotSize;
+    }
+    return quantity;
   }
 
 }

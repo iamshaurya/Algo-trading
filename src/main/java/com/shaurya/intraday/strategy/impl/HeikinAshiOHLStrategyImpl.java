@@ -139,22 +139,22 @@ public class HeikinAshiOHLStrategyImpl implements HeikinAshiOHLStrategy {
 			// always check for stop loss hit before exiting trade and update
 			// reason in db
 			if (takeProfitReached(haCandle.getCandle(), openTrade)) {
-				tradeCall = new StrategyModel(candle.getToken(), openTrade.getPosition(), openTrade.getAtr(),
+				tradeCall = new StrategyModel(candle.getToken(), openTrade.getPosition(), openTrade.getSl(),
 						candle.getClose(), openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(),
 						true);
 			}
 			if (stopLossReached(haCandle.getCandle(), openTrade)) {
-				tradeCall = new StrategyModel(candle.getToken(), openTrade.getPosition(), openTrade.getAtr(),
+				tradeCall = new StrategyModel(candle.getToken(), openTrade.getPosition(), openTrade.getSl(),
 						candle.getClose(), openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(),
 						true);
 			}
 			if (openTrade.getPosition() == PositionType.LONG && (!maUptrend(candle) || redCandle(candle))) {
-				tradeCall = new StrategyModel(candle.getToken(), openTrade.getPosition(), openTrade.getAtr(),
+				tradeCall = new StrategyModel(candle.getToken(), openTrade.getPosition(), openTrade.getSl(),
 						candle.getClose(), openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(),
 						true);
 			}
 			if (openTrade.getPosition() == PositionType.SHORT && (!maDowntrend(candle) || greenCandle(candle))) {
-				tradeCall = new StrategyModel(candle.getToken(), openTrade.getPosition(), openTrade.getAtr(),
+				tradeCall = new StrategyModel(candle.getToken(), openTrade.getPosition(), openTrade.getSl(),
 						candle.getClose(), openTrade.getSecurity(), openTrade.getOrderId(), openTrade.getQuantity(),
 						true);
 			}

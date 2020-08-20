@@ -33,4 +33,8 @@ public interface TradeOrderService {
 	public String getOrderId(StrategyModel model) throws JSONException, IOException, KiteException;
 
 	public Double getTotalMargin() throws JSONException, IOException, KiteException;
+
+	//take 1% risk per trade
+	Integer getQuantityAsPerRisk(Double slPoints, Integer lotSize)
+			throws IOException, KiteException;
 }

@@ -42,4 +42,6 @@ public class TradeStrategy {
 	private Double marginPortion;
 	@Column(name = "quantity")
 	private Integer quantity;
+	@Column(name = "lot_size")
+	private Integer lotSize;
 }

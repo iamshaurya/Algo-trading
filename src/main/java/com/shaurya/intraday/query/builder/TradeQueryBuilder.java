@@ -61,6 +61,15 @@ public class TradeQueryBuilder {
 		return cq;
 	}
 
+	public static CustomQueryHolder queryToPerformance() {
+		CustomQueryHolder cq = new CustomQueryHolder();
+		StringBuilder sb = new StringBuilder();
+		sb.append("select performance from Performance performance");
+		cq.setQueryString(sb.toString());
+		cq.setInParamMap(new HashMap<>());
+		return cq;
+	}
+
 	public static CustomQueryHolder queryToFetchSecurityAllTradeStrategy() {
 		CustomQueryHolder cq = new CustomQueryHolder();
 		StringBuilder sb = new StringBuilder();

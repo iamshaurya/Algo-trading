@@ -8,10 +8,10 @@ import static com.shaurya.intraday.util.HelperUtil.getDayStartTime;
 import static com.shaurya.intraday.util.HelperUtil.getNthLastKeyEntry;
 import static com.shaurya.intraday.util.HelperUtil.getPrevTradingDate;
 
+import com.shaurya.intraday.entity.Performance;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -49,6 +49,7 @@ import com.shaurya.intraday.util.MailSender;
 import com.shaurya.intraday.util.StringUtil;
 import com.zerodhatech.kiteconnect.kitehttp.exceptions.KiteException;
 import com.zerodhatech.models.HistoricalData;
+import org.springframework.util.CollectionUtils;
 
 /**
  * @author Shaurya
@@ -57,7 +58,8 @@ import com.zerodhatech.models.HistoricalData;
 @Slf4j
 @Service
 public class TradeServiceImpl implements TradeService {
-
+  @Autowired
+  private JpaRepo<Performance> performanceRepo;
   @Autowired
   private JpaRepo<Trade> tradeRepo;
   @Autowired
@@ -284,6 +286,7 @@ public class TradeServiceImpl implements TradeService {
     List<Trade> tradeList = tradeRepo.fetchByQuery(TradeQueryBuilder.queryToFetchDayTrades(
         getDateStringFormat(getDayStartTime().getTime()),
         getDateStringFormat(getDayEndTime().getTime())));
+    updatePerformance(tradeList);
     for (Trade t : tradeList) {
       if (securityTradeMap.get(t.getSecurityName()) == null) {
         securityTradeMap.put(t.getSecurityName(), new ArrayList<>());
@@ -337,6 +340,46 @@ public class TradeServiceImpl implements TradeService {
             + successfullTrade
             + "\n" + "unsuccessfull trades : " + unsuccessfullTrade,
         mailAccount);
+  }
+
+  private void updatePerformance(List<Trade> trades) {
+    List<Performance> performanceList = performanceRepo
+        .fetchByQuery(TradeQueryBuilder.queryToPerformance());
+    if (!CollectionUtils.isEmpty(performanceList) && !CollectionUtils.isEmpty(trades)) {
+      Performance performance = performanceList.get(0);
+      int totalWinToday = 0;
+      int totalLossToday = 0;
+      double totalWinR = 0;
+      double totalLossR = 0;
+      for (Trade t : trades) {
+        if (t.getPl() > 0) {
+          totalWinR += t.getRiskToReward();
+          totalWinToday++;
+        } else {
+          totalLossR += t.getRiskToReward();
+          totalLossR++;
+        }
+      }
+      performance.setTotalWinningTrade(performance.getTotalWinningTrade() + totalWinToday);
+      performance.setTotalWinningR(performance.getTotalWinningR() + totalWinR);
+      performance
+          .setAvgWinningR(performance.getTotalWinningR() / performance.getTotalWinningTrade());
+      performance.setTotalLosingTrade(performance.getTotalLosingTrade() + totalLossToday);
+      performance.setTotalLosingR(performance.getTotalLosingR() + totalLossR);
+      performance.setAvgLosingR(performance.getTotalLosingR() / performance.getTotalLosingTrade());
+      performance.setWinRate(
+          (double) (performance.getTotalWinningTrade() / (performance.getTotalWinningTrade()
+              + performance
+              .getTotalLosingTrade())));
+      Double edge = (performance.getWinRate() * performance.getAvgWinningR()) - (
+          (100 - performance.getWinRate()) * performance.getAvgLosingR());
+      performance.setEdge(edge);
+      //TODO: need to check how to calculate max drawdown
+      //performance.setSharpeRatio();
+      //performance.setMaxDrawDown();
+
+      performanceRepo.update(performance);
+    }
   }
 
   private double brokerageCharge(double buyTradePrice, double sellTradePrice) {

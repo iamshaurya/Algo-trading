@@ -94,7 +94,7 @@ public class TradeProcessorImpl implements TradeProcessor {
               metadataMap.get(candle.getSecurity()).getLotSize());
           switch (tradeCall.getPosition()) {
             case LONG:
-              if (isPreferedPosition(tradeCall)) {
+              if (isPreferedPosition(tradeCall) && quantity > 0) {
                 // make call for long cover order
                 tradeCall.setQuantity(quantity);
                 tradeCall = tradeOrderService.placeEntryCoverOrder(tradeCall);
@@ -117,7 +117,7 @@ public class TradeProcessorImpl implements TradeProcessor {
               }
               break;
             case SHORT:
-              if (isPreferedPosition(tradeCall)) {
+              if (isPreferedPosition(tradeCall) && quantity > 0) {
                 // make call for short cover order
                 tradeCall.setQuantity(quantity);
                 tradeCall = tradeOrderService.placeEntryCoverOrder(tradeCall);

@@ -105,10 +105,10 @@ public class HelperUtil {
     boolean isStopLossReached = false;
     switch (openTrade.getPosition()) {
       case LONG:
-        isStopLossReached = (openTrade.getTradePrice() - openTrade.getSl() >= candle.getClose());
+        isStopLossReached = (openTrade.getTradePrice() - openTrade.getSl() >= candle.getLow());
         break;
       case SHORT:
-        isStopLossReached = (openTrade.getTradePrice() + openTrade.getSl() <= candle.getClose());
+        isStopLossReached = (openTrade.getTradePrice() + openTrade.getSl() <= candle.getHigh());
         break;
       default:
         break;

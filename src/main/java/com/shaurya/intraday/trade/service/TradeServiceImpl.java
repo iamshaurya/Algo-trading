@@ -115,7 +115,6 @@ public class TradeServiceImpl implements TradeService {
       log.error("error in fetching total margin when closing trade {} ", e);
     }
     openTrade = tradeRepo.update(openTrade);
-    //TODO: main a performance metric - create a performance metric table - performance metric - total win, total loss, average win R , average loss R, edge
     return TradeBuilder.reverseConvert(openTrade, false);
   }
 
@@ -209,6 +208,11 @@ public class TradeServiceImpl implements TradeService {
   }
 
   @Override
+  public Double checkBalance() throws IOException, KiteException {
+    return tradeOrderService.getTotalMargin();
+  }
+
+  @Override
   public void updateStrategyStocks(List<StrategyModel> smList) {
     for (StrategyModel sm : smList) {
       TradeStrategy ts = TradeBuilder.convertStrategyModelToEntity(sm);
@@ -281,7 +285,7 @@ public class TradeServiceImpl implements TradeService {
   }
 
   @Override
-  public void sendPNLStatement() {
+  public void sendPNLStatement() throws IOException, KiteException {
     Map<String, List<Trade>> securityTradeMap = new HashMap<>();
     List<Trade> tradeList = tradeRepo.fetchByQuery(TradeQueryBuilder.queryToFetchDayTrades(
         getDateStringFormat(getDayStartTime().getTime()),
@@ -342,11 +346,17 @@ public class TradeServiceImpl implements TradeService {
         mailAccount);
   }
 
-  private void updatePerformance(List<Trade> trades) {
+  private void updatePerformance(List<Trade> trades) throws IOException, KiteException {
     List<Performance> performanceList = performanceRepo
         .fetchByQuery(TradeQueryBuilder.queryToPerformance());
     if (!CollectionUtils.isEmpty(performanceList) && !CollectionUtils.isEmpty(trades)) {
       Performance performance = performanceList.get(0);
+      Double currentEquity = tradeOrderService.getTotalMargin();
+      Double returnPer =
+          ((currentEquity - performance.getStartingCapital()) / performance.getStartingCapital())
+              * 100;
+      performance.setCurrentCapital(currentEquity);
+      performance.setReturnPercentage(returnPer);
       int totalWinToday = 0;
       int totalLossToday = 0;
       double totalWinR = 0;

@@ -35,7 +35,7 @@ public interface TradeService {
 
   public Map<String, Long> getTokenNameMap();
 
-  public void sendPNLStatement();
+  public void sendPNLStatement() throws IOException, KiteException;
 
   public List<Candle> getPrevDayCandles(Long instrumentToken, Date currentDate)
       throws IOException, KiteException;
@@ -51,4 +51,6 @@ public interface TradeService {
   public void updateStrategyStocks(List<StrategyModel> smList);
 
   public Map<StrategyModel, StrategyType> getAllTradeStrategy();
+
+  Double checkBalance() throws IOException, KiteException;
 }

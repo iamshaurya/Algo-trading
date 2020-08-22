@@ -34,8 +34,8 @@ public class CronService {
 		HttpClientService.executeGetRequest("http://127.0.0.1:9080/trade/v1/shutdown", new ArrayList<NameValuePair>());
 	}
 
-	//@Scheduled(cron = "	0 12 13 * * *")
+	//@Scheduled(cron = "	0 57 11 * * *")
 	public void stockScreener() {
-		HttpClientService.executeGetRequest("http://127.0.0.1:9080/trade/v1/stockScreener", new ArrayList<NameValuePair>());
+		HttpClientService.executeGetRequest("http://127.0.0.1:9080/trade/v1/startup/login", new ArrayList<NameValuePair>());
 	}
 }

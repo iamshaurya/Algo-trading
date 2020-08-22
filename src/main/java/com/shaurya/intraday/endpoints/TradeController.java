@@ -103,4 +103,9 @@ public class TradeController {
     return new ResponseEntity<>("Check mail", HttpStatus.OK);
   }
 
+  @RequestMapping(value = "/checkBalance", method = RequestMethod.GET)
+  public ResponseEntity<Double> checkBalance() throws IOException, KiteException {
+    return new ResponseEntity<Double>(tradeService.checkBalance(), HttpStatus.OK);
+  }
+
 }

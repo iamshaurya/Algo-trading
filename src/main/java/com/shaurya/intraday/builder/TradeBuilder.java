@@ -38,7 +38,7 @@ public class TradeBuilder {
 
 	public static StrategyModel reverseConvert(Trade openTrade, boolean isOpenTrade) {
 		StrategyModel model = new StrategyModel(openTrade.getSecurityCode(),
-				PositionType.getEnumById(openTrade.getPositionType().intValue()), openTrade.getAtr(),
+				PositionType.getEnumById(openTrade.getPositionType().intValue()), openTrade.getSl(),
 				isOpenTrade ? openTrade.getTradeEntryPrice() : openTrade.getTradeExitPrice(),
 				openTrade.getSecurityName(), openTrade.getOrderId(), openTrade.getQuantity(), false);
 		return model;

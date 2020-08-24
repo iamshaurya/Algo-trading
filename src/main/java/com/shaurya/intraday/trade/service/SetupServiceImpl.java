@@ -55,6 +55,7 @@ public class SetupServiceImpl {
 	}
 
 	public void shutdown() throws IOException, KiteException {
+		tradeService.sendPNLStatement();
 		liveTickerService.disconnect();
 		processor.destroyStrategyMap();
 		KiteConnect sdkClient = loginService.getSdkClient();
@@ -62,7 +63,6 @@ public class SetupServiceImpl {
 			sdkClient.logout();
 			loginService.destroySdkClient();
 		}
-		tradeService.sendPNLStatement();
 		// tradeService.incrementDayForMonitorStocks();
 	}
 

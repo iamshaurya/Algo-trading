@@ -363,7 +363,7 @@ public class TradeServiceImpl implements TradeService {
       double totalLossR = 0;
       for (Trade t : trades) {
         if (t.getPl() > 0) {
-          totalWinR += t.getRiskToReward();
+            totalWinR += t.getRiskToReward();
           totalWinToday++;
         } else {
           totalLossR += t.getRiskToReward();
@@ -377,10 +377,10 @@ public class TradeServiceImpl implements TradeService {
       performance.setTotalLosingTrade(performance.getTotalLosingTrade() + totalLossToday);
       performance.setTotalLosingR(performance.getTotalLosingR() + totalLossR);
       performance.setAvgLosingR(performance.getTotalLosingR() / performance.getTotalLosingTrade());
-      performance.setWinRate(
-          (double) (performance.getTotalWinningTrade() / (performance.getTotalWinningTrade()
-              + performance
-              .getTotalLosingTrade())));
+      Double winRate = (double) (
+          (performance.getTotalWinningTrade() / (performance.getTotalWinningTrade()
+              + performance.getTotalLosingTrade())) * 100);
+      performance.setWinRate(winRate);
       Double edge = (performance.getWinRate() * performance.getAvgWinningR()) - (
           (100 - performance.getWinRate()) * performance.getAvgLosingR());
       performance.setEdge(edge);

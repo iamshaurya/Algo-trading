@@ -9,6 +9,7 @@ import static com.shaurya.intraday.util.HelperUtil.isIntradayClosingTime;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,6 +65,8 @@ public class TradeProcessorImpl implements TradeProcessor {
           .processTrades(candle, openTrade, true);
 
       if (isIntradayClosingTime(candle.getTime())) {
+        log.error("Squaring of position - candle time {}  closing time {}", candle.getTime(),
+            new Date());
         // square off all position
         if (openTrade != null) {
           if (tradeOrderService.getOrderStatus(openTrade) == OrderStatusType.OPEN) {

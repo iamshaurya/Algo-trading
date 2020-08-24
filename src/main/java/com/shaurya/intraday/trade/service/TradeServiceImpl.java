@@ -103,7 +103,7 @@ public class TradeServiceImpl implements TradeService {
       exitPrice = openTrade.getTradeEntryPrice() - openTrade.getSl();
     }
     Double pl = (exitPrice - openTrade.getTradeEntryPrice()) * openTrade.getQuantity();
-    Double rr = (openTrade.getRisk() / pl);
+    Double rr = (pl / openTrade.getRisk());
     openTrade.setTradeExitPrice(exitPrice);
     openTrade.setStatus((byte) 0);
     openTrade.setTradeExitReason(reason.getId());

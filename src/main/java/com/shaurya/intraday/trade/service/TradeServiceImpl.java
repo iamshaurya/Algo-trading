@@ -100,7 +100,11 @@ public class TradeServiceImpl implements TradeService {
     }
     Double exitPrice = model.getTradePrice();
     if (TradeExitReason.HARD_STOP_LOSS_HIT.equals(reason)) {
-      exitPrice = openTrade.getTradeEntryPrice() - openTrade.getSl();
+      exitPrice =
+          PositionType.getEnumById(openTrade.getPositionType().intValue()).equals(PositionType.LONG)
+              ?
+              (openTrade.getTradeEntryPrice() - openTrade.getSl())
+              : openTrade.getTradeEntryPrice() + openTrade.getSl();
     }
     Double pl = (exitPrice - openTrade.getTradeEntryPrice()) * openTrade.getQuantity();
     Double rr = (pl / openTrade.getRisk());

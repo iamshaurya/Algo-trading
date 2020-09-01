@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -58,6 +59,7 @@ import org.springframework.util.CollectionUtils;
 @Slf4j
 @Service
 public class TradeServiceImpl implements TradeService {
+
   @Autowired
   private JpaRepo<Performance> performanceRepo;
   @Autowired
@@ -70,6 +72,7 @@ public class TradeServiceImpl implements TradeService {
   private MailAccount mailAccount;
   @Autowired
   private TradeOrderService tradeOrderService;
+  private Map<Long, TreeSet<Candle>> monitorStockMap;
 
   /*
    * (non-Javadoc)
@@ -168,6 +171,7 @@ public class TradeServiceImpl implements TradeService {
         model.setMarginPortion(sl.getMarginPortion());
         model.setQuantity(sl.getQuantity());
         model.setLotSize(sl.getLotSize());
+        model.setExchangeType(sl.getExchangeType());
         sMap.put(model, StrategyType.getEnumById(sl.getStrategyType()));
       }
     }
@@ -186,7 +190,10 @@ public class TradeServiceImpl implements TradeService {
         model.setSecurityToken(sl.getSecurityToken());
         model.setPreferedPosition(PositionType.getEnumById(sl.getPreferedPosition()));
         model.setMarginMultiplier(sl.getMarginMultiplier());
+        model.setMarginPortion(sl.getMarginPortion());
         model.setQuantity(sl.getQuantity());
+        model.setLotSize(sl.getLotSize());
+        model.setExchangeType(sl.getExchangeType());
         sMap.put(model, StrategyType.getEnumById(sl.getStrategyType()));
       }
     }
@@ -493,6 +500,40 @@ public class TradeServiceImpl implements TradeService {
     }
     return tokenNameMap;
 
+  }
+
+  @Override
+  public void recordMonitorStock(Candle candle) {
+    if (monitorStockMap == null) {
+      monitorStockMap = new HashMap<>();
+    }
+    if (monitorStockMap.get(candle.getToken()) == null) {
+      monitorStockMap.put(candle.getToken(), new TreeSet<>());
+    }
+    TreeSet<Candle> candleSet = monitorStockMap.get(candle.getToken());
+    candleSet.add(candle);
+    monitorStockMap.put(candle.getToken(), candleSet);
+  }
+
+  @Override
+  public Map<Long, TreeSet<Candle>> getMonitorStockMap() {
+    return monitorStockMap;
+  }
+
+  @Override
+  public void cleanUpMonitorStockMap() {
+    monitorStockMap = null;
+  }
+
+  @Override
+  public void updateAllStockToMonitorStock() {
+    strategyRepo.runNativeQueryForUpdate(TradeQueryBuilder.queryToUpdateAllStockToMonitorStock());
+  }
+
+  @Override
+  public void updateTradeStocks(List<Long> eligibleStocks, Double marginPortion) {
+    strategyRepo.runNativeQueryForUpdate(
+        TradeQueryBuilder.queryToUpdateTradeStock(eligibleStocks, marginPortion));
   }
 
 }

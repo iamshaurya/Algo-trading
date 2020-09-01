@@ -14,6 +14,7 @@ import com.shaurya.intraday.enums.TradeExitReason;
 import com.shaurya.intraday.model.Candle;
 import com.shaurya.intraday.model.StrategyModel;
 import com.zerodhatech.kiteconnect.kitehttp.exceptions.KiteException;
+import java.util.TreeSet;
 
 /**
  * @author Shaurya
@@ -53,4 +54,14 @@ public interface TradeService {
   public Map<StrategyModel, StrategyType> getAllTradeStrategy();
 
   Double checkBalance() throws IOException, KiteException;
+
+  void recordMonitorStock(Candle candle);
+
+  Map<Long, TreeSet<Candle>> getMonitorStockMap();
+
+  void cleanUpMonitorStockMap();
+
+  void updateAllStockToMonitorStock();
+
+  void updateTradeStocks(List<Long> eligibleStocks, Double marginPortion);
 }

@@ -117,8 +117,7 @@ public class LiveTickerServiceImpl implements LiveTickerService {
           }
           if (isTimeDiff1Min(monitorStock.get(t.getInstrumentToken()).getPrevCandleCreationTime(),
               monitorStock.get(t.getInstrumentToken()).getLastTime())) {
-            // tradeService
-            // .createHistoricalCandle(monitorStock.get(t.getInstrumentToken()).getCandle());
+            tradeService.recordMonitorStock(monitorStock.get(t.getInstrumentToken()).getCandle());
             initialiseBlankLiveCandle(monitorStock, t);
           }
           // }

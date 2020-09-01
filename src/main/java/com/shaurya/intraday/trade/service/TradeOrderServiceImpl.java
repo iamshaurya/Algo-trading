@@ -39,8 +39,8 @@ public class TradeOrderServiceImpl implements TradeOrderService {
   private static final String VALIDITY_DAY = "DAY";
   private static final String PRODUCT_MIS = "MIS";
   private static final String ORDER_TYPE_MARKET = "MARKET";
-  private static final String EXCHANGE_NSE = "NSE";
-  private static final String EXCHANGE_NFO = "NFO";
+  /*private static final String EXCHANGE_NSE = "NSE";
+  private static final String EXCHANGE_NFO = "NFO";*/
   private static final String VARIETY_COVER_ORDER = "co";
   @Autowired
   private LoginService loginService;
@@ -50,7 +50,7 @@ public class TradeOrderServiceImpl implements TradeOrderService {
   @Override
   public StrategyModel placeEntryCoverOrder(StrategyModel model) {
     OrderParams orderParams = new OrderParams();
-    orderParams.exchange = EXCHANGE_NFO;
+    orderParams.exchange = model.getExchangeType().name();
     orderParams.tradingsymbol = model.getSecurity();
     orderParams.orderType = ORDER_TYPE_MARKET;
     orderParams.product = PRODUCT_MIS;
@@ -162,12 +162,13 @@ public class TradeOrderServiceImpl implements TradeOrderService {
     return net;
   }
 
-  //take 1% risk per trade
+  //take max 1% risk per trade
   @Override
-  public Integer getQuantityAsPerRisk(final Double slPoints, final Integer lotSize)
+  public Integer getQuantityAsPerRisk(final Double slPoints, final Integer lotSize,
+      final Double riskPerTradePer)
       throws IOException, KiteException {
     Double equity = getTotalMargin();
-    Double riskPerTrade = 0.01 * equity;
+    Double riskPerTrade = riskPerTradePer * equity;
     Integer quantity = (int) Math.floor(riskPerTrade / slPoints);
     if (lotSize != null) {
       Integer lots = (int) Math.floor(quantity / lotSize);

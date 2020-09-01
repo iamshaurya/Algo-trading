@@ -4,6 +4,7 @@
 package com.shaurya.intraday.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.shaurya.intraday.enums.ExchangeType;
 import com.shaurya.intraday.enums.PositionType;
 
 import lombok.Getter;
@@ -33,6 +34,7 @@ public class StrategyModel {
 	private double tradeMargin;
 	private double marginPortion;
 	private boolean trailSl;
+	private ExchangeType exchangeType;
 
 	public StrategyModel() {
 

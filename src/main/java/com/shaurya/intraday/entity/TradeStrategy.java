@@ -3,8 +3,11 @@
  */
 package com.shaurya.intraday.entity;
 
+import com.shaurya.intraday.enums.ExchangeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -44,4 +47,7 @@ public class TradeStrategy {
 	private Integer quantity;
 	@Column(name = "lot_size")
 	private Integer lotSize;
+	@Column(name = "exchange_type")
+	@Enumerated(EnumType.STRING)
+	private ExchangeType exchangeType;
 }

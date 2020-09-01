@@ -10,9 +10,11 @@ import com.zerodhatech.models.Tick;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.joda.time.DateTime;
 
@@ -230,6 +232,34 @@ public class HelperUtil {
 
   public static boolean isNifty50Downtrend(Candle c) {
     return c.getClose() <= (c.getOpen() * 0.9975);
+  }
+
+  public static Candle formDayCandle(TreeSet<Candle> candleSet) {
+    Candle candleday = null;
+    int i = 0;
+    Iterator<Candle> cItr = candleSet.iterator();
+    while (cItr.hasNext()) {
+      Candle c = cItr.next();
+      if (i == 0) {
+        candleday = new Candle(c.getSecurity(), c.getToken(), c.getTime(), c.getOpen(),
+            c.getHigh(),
+            c.getLow(), c.getClose(), 0);
+      } else {
+        candleday.setClose(c.getClose());
+        candleday.setHigh(Math.max(candleday.getHigh(), c.getHigh()));
+        candleday.setLow(Math.min(candleday.getLow(), c.getLow()));
+      }
+      i++;
+    }
+    candleSet.clear();
+    return candleday;
+  }
+
+  public static double cprRange(Candle dayCandle) {
+    double cprWidth = Math.abs(
+        ((2 * dayCandle.getClose()) - dayCandle.getHigh() - dayCandle.getLow()) / (
+            dayCandle.getClose() + dayCandle.getHigh() + dayCandle.getLow())) * 100;
+    return cprWidth;
   }
 
 }

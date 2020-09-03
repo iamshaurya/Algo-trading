@@ -96,6 +96,7 @@ public class TradeProcessorImpl implements TradeProcessor {
           Integer quantity = tradeOrderService.getQuantityAsPerRisk(tradeCall.getSl(),
               metadataMap.get(candle.getSecurity()).getLotSize(),
               metadataMap.get(candle.getSecurity()).getMarginPortion());
+          tradeCall.setExchangeType(metadataMap.get(candle.getSecurity()).getExchangeType());
           switch (tradeCall.getPosition()) {
             case LONG:
               if (isPreferedPosition(tradeCall) && quantity > 0) {

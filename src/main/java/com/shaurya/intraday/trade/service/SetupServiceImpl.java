@@ -76,7 +76,11 @@ public class SetupServiceImpl {
   }
 
   private void updateNextDayStocks() {
+    tradeService.updateAllStockToMonitorStock();
     Map<Long, TreeSet<Candle>> monitorStocks = tradeService.getMonitorStockMap();
+    if(monitorStocks == null){
+      return;
+    }
     List<Long> eligibleStocks = new ArrayList<>();
     for (Entry<Long, TreeSet<Candle>> e : monitorStocks.entrySet()) {
       Candle dayCandle = HelperUtil.formDayCandle(e.getValue());
@@ -86,9 +90,8 @@ public class SetupServiceImpl {
         eligibleStocks.add(dayCandle.getToken());
       }
     }
-    tradeService.updateAllStockToMonitorStock();
-    if(eligibleStocks.size() > 0){
-      Double marginPortion = 4.0 / eligibleStocks.size();
+    if (eligibleStocks.size() > 0) {
+      Double marginPortion = Math.min(0.05 / eligibleStocks.size(), 0.01);
       tradeService.updateTradeStocks(eligibleStocks, marginPortion);
     }
     tradeService.cleanUpMonitorStockMap();

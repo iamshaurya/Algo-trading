@@ -41,7 +41,7 @@ public class TradeQueryBuilder {
 	public static CustomQueryHolder queryToFetchSecurityMonitorStrategy() {
 		CustomQueryHolder cq = new CustomQueryHolder();
 		StringBuilder sb = new StringBuilder();
-		sb.append("select ts from TradeStrategy ts where ts.day = 1");
+		sb.append("select ts from TradeStrategy ts");
 		cq.setQueryString(sb.toString());
 		cq.setInParamMap(new HashMap<>());
 		return cq;

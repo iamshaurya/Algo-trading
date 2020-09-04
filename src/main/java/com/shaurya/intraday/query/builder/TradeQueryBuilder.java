@@ -93,8 +93,8 @@ public class TradeQueryBuilder {
 	public static CustomQueryHolder queryToUpdateTradeStock(List<Long> tokens, Double marginPortion) {
 		CustomQueryHolder cq = new CustomQueryHolder();
 		StringBuilder sb = new StringBuilder();
-		sb.append("update trade_strategy set day = 2 and margin_portion = " + marginPortion
-				+ "where security_token in (" + StringUtil
+		sb.append("update trade_strategy set day = 2 , margin_portion = " + marginPortion
+				+ " where security_token in (" + StringUtil
 				.convertListToDelimetedString(tokens) + ")");
 		cq.setQueryString(sb.toString());
 		cq.setInParamMap(new HashMap<>());

@@ -85,8 +85,8 @@ public class SetupServiceImpl {
     for (Entry<Long, TreeSet<Candle>> e : monitorStocks.entrySet()) {
       Candle dayCandle = HelperUtil.formDayCandle(e.getValue());
       Double cprWidth = HelperUtil.cprRange(dayCandle);
+      log.error("cpr width for {}, is {}", dayCandle.getSecurity(), cprWidth);
       if (cprWidth <= 0.10) {
-        log.error("cpr width for {}, is {}", dayCandle.getSecurity(), cprWidth);
         eligibleStocks.add(dayCandle.getToken());
       }
     }

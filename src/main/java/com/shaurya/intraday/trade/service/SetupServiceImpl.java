@@ -63,7 +63,7 @@ public class SetupServiceImpl {
   }
 
   public void shutdown() throws IOException, KiteException {
-    updateNextDayStocks();
+    //updateNextDayStocks();
     tradeService.sendPNLStatement();
     liveTickerService.disconnect();
     processor.destroyStrategyMap();

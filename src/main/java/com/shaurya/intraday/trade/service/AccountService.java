@@ -13,4 +13,6 @@ public interface AccountService {
 	public KiteAccount getAccount();
 
   void updateFundBalance(Integer totalFund);
+
+  Integer getFund();
 }

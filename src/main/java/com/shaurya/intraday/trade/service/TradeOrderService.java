@@ -34,8 +34,6 @@ public interface TradeOrderService {
 
 	public Double getTotalMargin() throws JSONException, IOException, KiteException;
 
-	//take 1% risk per trade
-	Integer getQuantityAsPerRisk(final Double slPoints, final Integer lotSize,
-			final Double riskPerTradePer)
-			throws IOException, KiteException;
+	Integer getQuantityAsPerRisk(Integer fund, final Double slPoints, final Integer lotSize,
+			final Double riskPerTradePer);
 }

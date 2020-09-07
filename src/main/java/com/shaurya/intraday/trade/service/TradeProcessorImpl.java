@@ -55,6 +55,8 @@ public class TradeProcessorImpl implements TradeProcessor {
   private TradeOrderService tradeOrderService;
   @Autowired
   private MailAccount mailAccount;
+  @Autowired
+  private AccountService accountService;
 
   @Override
   public synchronized StrategyModel getTradeCall(Candle candle) {
@@ -93,9 +95,10 @@ public class TradeProcessorImpl implements TradeProcessor {
               false)) != null ? tradeCall : null;
         }
         if (tradeCall != null) {
-          Integer quantity = tradeOrderService.getQuantityAsPerRisk(tradeCall.getSl(),
-              metadataMap.get(candle.getSecurity()).getLotSize(),
-              metadataMap.get(candle.getSecurity()).getMarginPortion());
+          Integer quantity = tradeOrderService
+              .getQuantityAsPerRisk(accountService.getFund(), tradeCall.getSl(),
+                  metadataMap.get(candle.getSecurity()).getLotSize(),
+                  metadataMap.get(candle.getSecurity()).getMarginPortion());
           tradeCall.setExchangeType(metadataMap.get(candle.getSecurity()).getExchangeType());
           switch (tradeCall.getPosition()) {
             case LONG:

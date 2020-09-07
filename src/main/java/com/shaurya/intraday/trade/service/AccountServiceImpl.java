@@ -56,4 +56,13 @@ public class AccountServiceImpl implements AccountService {
     this.accountRepo.update(accountToUpdate);
   }
 
+  @Override
+  public Integer getFund() {
+    KiteAccount account = getAccount();
+    if (account == null) {
+      return 0;
+    }
+    return account.getFund();
+  }
+
 }

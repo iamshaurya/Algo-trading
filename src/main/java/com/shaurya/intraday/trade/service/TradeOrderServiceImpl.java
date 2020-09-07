@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 import com.shaurya.intraday.constant.Constants;
 import com.shaurya.intraday.enums.OrderStatusType;
 import com.shaurya.intraday.enums.PositionType;
-import com.shaurya.intraday.enums.StrategyType;
 import com.shaurya.intraday.model.Candle;
 import com.shaurya.intraday.model.MailAccount;
 import com.shaurya.intraday.model.StrategyModel;
@@ -164,10 +163,9 @@ public class TradeOrderServiceImpl implements TradeOrderService {
 
   //take max 1% risk per trade
   @Override
-  public Integer getQuantityAsPerRisk(final Double slPoints, final Integer lotSize,
-      final Double riskPerTradePer)
-      throws IOException, KiteException {
-    Double equity = getTotalMargin();
+  public Integer getQuantityAsPerRisk(final Integer equity, final Double slPoints,
+      final Integer lotSize,
+      final Double riskPerTradePer) {
     Double riskPerTrade = riskPerTradePer * equity;
     Integer quantity = (int) Math.floor(riskPerTrade / slPoints);
     if (lotSize != null) {

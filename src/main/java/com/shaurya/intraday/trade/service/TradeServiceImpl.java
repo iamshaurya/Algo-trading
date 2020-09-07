@@ -204,7 +204,8 @@ public class TradeServiceImpl implements TradeService {
         sMap.put(model, StrategyType.getEnumById(sl.getStrategyType()));
       }
     }
-    return sMap;
+    //return sMap;
+    return new HashMap<>();
   }
 
   @Override

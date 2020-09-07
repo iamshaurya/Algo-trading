@@ -5,21 +5,33 @@ package com.shaurya.intraday.endpoints;
 
 import com.shaurya.intraday.constant.Constants;
 import com.shaurya.intraday.enums.IntervalType;
+import com.shaurya.intraday.enums.StrategyType;
 import com.shaurya.intraday.model.Candle;
 import com.shaurya.intraday.model.MailAccount;
+import com.shaurya.intraday.model.StrategyModel;
+import com.shaurya.intraday.model.UpdateStrategyDto;
 import com.shaurya.intraday.trade.service.SetupServiceImpl;
 import com.shaurya.intraday.trade.service.TradeService;
+import com.shaurya.intraday.util.HelperUtil;
 import com.shaurya.intraday.util.MailSender;
 import com.zerodhatech.kiteconnect.kitehttp.exceptions.KiteException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeSet;
+import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.CollectionUtils;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -66,7 +78,7 @@ public class TradeController {
       setupService.shutdown();
     } catch (IOException | KiteException e) {
       String reason = "shutdown failed by cron because :: " + e.getCause();
-			log.error("shutdown failed {}", reason);
+      log.error("shutdown failed {}", reason);
       MailSender.sendMail(Constants.TO_MAIL, Constants.TO_NAME, Constants.SHUTDOWN_FALIED, reason,
           mailAccount);
     }
@@ -106,6 +118,54 @@ public class TradeController {
   @RequestMapping(value = "/checkBalance", method = RequestMethod.GET)
   public ResponseEntity<Double> checkBalance() throws IOException, KiteException {
     return new ResponseEntity<Double>(tradeService.checkBalance(), HttpStatus.OK);
+  }
+
+  @RequestMapping(value = "/strategies", method = RequestMethod.GET)
+  public ResponseEntity<Map<StrategyType, StrategyModel>> getStrategies()
+      throws IOException, KiteException {
+    Map<StrategyModel, StrategyType> strategyTypeMap = tradeService.getTradeStrategy();
+    if (!CollectionUtils.isEmpty(strategyTypeMap)) {
+      Map<StrategyType, StrategyModel> reverseMap = new HashMap<>();
+      for (Entry<StrategyModel, StrategyType> e : strategyTypeMap.entrySet()) {
+        reverseMap.put(e.getValue(), e.getKey());
+      }
+      return new ResponseEntity<>(reverseMap, HttpStatus.OK);
+    }
+    return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+  }
+
+  @RequestMapping(value = "/strategies", method = RequestMethod.POST)
+  public ResponseEntity<String> updateStrategies(@RequestBody @NotNull UpdateStrategyDto requestDto)
+      throws IOException, KiteException {
+    if (requestDto == null || CollectionUtils.isEmpty(requestDto.getName())) {
+      return new ResponseEntity<>("Request or names can not be null", HttpStatus.BAD_REQUEST);
+    }
+    Map<Long, String> tokenNameMap = tradeService.getNameTokenMap();
+    if (CollectionUtils.isEmpty(tokenNameMap)) {
+      return new ResponseEntity<>("token-name map can not be null", HttpStatus.BAD_REQUEST);
+    }
+    Map<String, Long> reverseTokenNameMap = new HashMap<>();
+    for (Entry<Long, String> e : tokenNameMap.entrySet()) {
+      reverseTokenNameMap.put(e.getValue(), e.getKey());
+    }
+    List<Long> tokenList = new ArrayList<>();
+    for (String s : requestDto.getName()) {
+      if (reverseTokenNameMap.get(s) == null) {
+        return new ResponseEntity<>("No token found for " + s + " please check spelling!",
+            HttpStatus.BAD_REQUEST);
+      }
+      tokenList.add(reverseTokenNameMap.get(s));
+    }
+    updateNextDayStocks(tokenList);
+    return new ResponseEntity<>(HttpStatus.OK);
+  }
+
+  private void updateNextDayStocks(final List<Long> eligibleStocks) {
+    tradeService.updateAllStockToMonitorStock();
+    if (eligibleStocks.size() > 0) {
+      Double marginPortion = Math.min(0.05 / eligibleStocks.size(), 0.005);
+      tradeService.updateTradeStocks(eligibleStocks, marginPortion);
+    }
   }
 
 }

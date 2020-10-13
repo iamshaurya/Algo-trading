@@ -38,6 +38,7 @@ public class TradeOrderServiceImpl implements TradeOrderService {
   private static final String VALIDITY_DAY = "DAY";
   private static final String PRODUCT_MIS = "MIS";
   private static final String ORDER_TYPE_MARKET = "MARKET";
+  private static final String ORDER_TYPE_SLM = "SL-M";
   /*private static final String EXCHANGE_NSE = "NSE";
   private static final String EXCHANGE_NFO = "NFO";*/
   private static final String VARIETY_COVER_ORDER = "co";
@@ -63,7 +64,7 @@ public class TradeOrderServiceImpl implements TradeOrderService {
       order = loginService.getSdkClient().placeOrder(orderParams, VARIETY_COVER_ORDER);
       model.setOrderId(order.orderId);
     } catch (JSONException | IOException | KiteException e) {
-      log.error("Error in placing entry cover order :: {}" + e);
+      log.error("Error in placing entry cover order :: {}", e);
       MailSender.sendMail(Constants.TO_MAIL, Constants.TO_NAME, Constants.FAILED_ENTRY_COVER_ORDER,
           e.getMessage(), mailAccount);
     }
@@ -89,6 +90,10 @@ public class TradeOrderServiceImpl implements TradeOrderService {
     return pos == PositionType.LONG ? "BUY" : "SELL";
   }
 
+  private String getSlmTransactionType(PositionType pos) {
+    return pos == PositionType.LONG ? "SELL" : "BUY";
+  }
+
   @Override
   public StrategyModel placeExitCoverOrder(StrategyModel model)
       throws JSONException, IOException, KiteException {
@@ -98,6 +103,40 @@ public class TradeOrderServiceImpl implements TradeOrderService {
         if (!orderCancelledOrComplete(or)) {
           loginService.getSdkClient()
               .cancelOrder(or.orderId, or.parentOrderId, VARIETY_COVER_ORDER);
+        }
+      }
+    }
+    return model;
+  }
+
+  @Override
+  public StrategyModel placeTrailSlOrder(StrategyModel model)
+      throws JSONException, IOException, KiteException {
+    List<Order> orders = loginService.getSdkClient().getOrders();
+    Order order = null;
+    for (Order or : orders) {
+      if (or.parentOrderId != null && or.parentOrderId.equals(model.getOrderId())) {
+        if (!orderCancelledOrComplete(or)) {
+          try {
+            OrderParams orderParams = new OrderParams();
+            orderParams.parentOrderId = or.parentOrderId;
+            orderParams.exchange = model.getExchangeType().name();
+            orderParams.tradingsymbol = model.getSecurity();
+            orderParams.orderType = ORDER_TYPE_SLM;
+            orderParams.product = PRODUCT_MIS;
+            orderParams.triggerPrice = getTriggerPrice(model);
+            orderParams.validity = VALIDITY_DAY;
+            orderParams.transactionType = getSlmTransactionType(model.getPosition());
+            log.error("Order params for trailing {}", JsonParser.objectToJson(orderParams));
+            order = loginService.getSdkClient()
+                .modifyOrder(or.orderId, orderParams, VARIETY_COVER_ORDER);
+          } catch (JSONException | IOException | KiteException e) {
+            log.error("Error in trailing SLM stop loss order :: {}", e);
+            MailSender
+                .sendMail(Constants.TO_MAIL, Constants.TO_NAME, Constants.FAILED_ENTRY_COVER_ORDER,
+                    e.getMessage(), mailAccount);
+          }
+          break;
         }
       }
     }

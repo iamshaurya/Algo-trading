@@ -64,4 +64,6 @@ public interface TradeService {
   void updateAllStockToMonitorStock();
 
   void updateTradeStocks(List<Long> eligibleStocks, Double marginPortion);
+
+  void updateTrailSlTrade(StrategyModel tradeCall);
 }

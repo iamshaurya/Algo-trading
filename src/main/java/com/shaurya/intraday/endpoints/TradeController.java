@@ -121,23 +121,29 @@ public class TradeController {
   }
 
   @RequestMapping(value = "/strategies", method = RequestMethod.GET)
-  public ResponseEntity<Map<StrategyType, StrategyModel>> getStrategies()
+  public ResponseEntity<Map<StrategyType, List<StrategyModel>>> getStrategies()
       throws IOException, KiteException {
     Map<StrategyModel, StrategyType> strategyTypeMap = tradeService.getTradeStrategy();
     if (!CollectionUtils.isEmpty(strategyTypeMap)) {
-      Map<StrategyType, StrategyModel> reverseMap = new HashMap<>();
+      Map<StrategyType, List<StrategyModel>> reverseMap = new HashMap<>();
       for (Entry<StrategyModel, StrategyType> e : strategyTypeMap.entrySet()) {
-        reverseMap.put(e.getValue(), e.getKey());
+        if(reverseMap.get(e.getValue()) == null){
+          reverseMap.put(e.getValue(), new ArrayList<>());
+        }
+        List<StrategyModel> strategyModelList = reverseMap.get(e.getValue());
+        strategyModelList.add(e.getKey());
+        reverseMap.put(e.getValue(), strategyModelList);
       }
       return new ResponseEntity<>(reverseMap, HttpStatus.OK);
     }
     return new ResponseEntity<>(HttpStatus.NO_CONTENT);
   }
 
-  @RequestMapping(value = "/strategies", method = RequestMethod.POST)
-  public ResponseEntity<String> updateStrategies(@RequestBody @NotNull UpdateStrategyDto requestDto)
+  @RequestMapping(value = "/update/strategies", method = RequestMethod.GET)
+  public ResponseEntity<String> updateStrategies(@RequestParam List<String> name)
       throws IOException, KiteException {
-    if (requestDto == null || CollectionUtils.isEmpty(requestDto.getName())) {
+    if (name == null || CollectionUtils.isEmpty(name)) {
+      tradeService.updateAllStockToMonitorStock();
       return new ResponseEntity<>("Request or names can not be null", HttpStatus.BAD_REQUEST);
     }
     Map<Long, String> tokenNameMap = tradeService.getNameTokenMap();
@@ -149,7 +155,7 @@ public class TradeController {
       reverseTokenNameMap.put(e.getValue(), e.getKey());
     }
     List<Long> tokenList = new ArrayList<>();
-    for (String s : requestDto.getName()) {
+    for (String s : name) {
       if (reverseTokenNameMap.get(s) == null) {
         return new ResponseEntity<>("No token found for " + s + " please check spelling!",
             HttpStatus.BAD_REQUEST);

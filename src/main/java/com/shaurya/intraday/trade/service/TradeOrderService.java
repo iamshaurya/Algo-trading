@@ -30,7 +30,10 @@ public interface TradeOrderService {
 	
 	public Double getMarginForSecurity(Map<String, Strategy> strategyMap) throws JSONException, IOException, KiteException;
 
-	public String getOrderId(StrategyModel model) throws JSONException, IOException, KiteException;
+  StrategyModel placeTrailSlOrder(StrategyModel model)
+      throws JSONException, IOException, KiteException;
+
+  public String getOrderId(StrategyModel model) throws JSONException, IOException, KiteException;
 
 	public Double getTotalMargin() throws JSONException, IOException, KiteException;
 

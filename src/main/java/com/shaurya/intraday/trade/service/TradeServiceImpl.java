@@ -123,11 +123,11 @@ public class TradeServiceImpl implements TradeService {
     openTrade.setTradeExitReason(reason.getId());
     openTrade.setRiskToReward(rr);
     openTrade.setPl(pl);
-    try {
+    /*try {
       openTrade.setCurrentEquity(tradeOrderService.getTotalMargin());
     } catch (Exception | KiteException e) {
       log.error("error in fetching total margin when closing trade {} ", e);
-    }
+    }*/
     openTrade = tradeRepo.update(openTrade);
     return TradeBuilder.reverseConvert(openTrade, false);
   }
@@ -542,6 +542,16 @@ public class TradeServiceImpl implements TradeService {
   public void updateTradeStocks(List<Long> eligibleStocks, Double marginPortion) {
     strategyRepo.runNativeQueryForUpdate(
         TradeQueryBuilder.queryToUpdateTradeStock(eligibleStocks, marginPortion));
+  }
+
+  @Override
+  public void updateTrailSlTrade(StrategyModel model) {
+    Trade openTrade = fetchOpenTradeEntityBySecurity(model.getSecurity());
+    if (openTrade == null) {
+      throw new RuntimeException("no open trade found for " + model.toString());
+    }
+    openTrade.setSl(model.getSl());
+    tradeRepo.update(openTrade);
   }
 
 }

@@ -3,9 +3,10 @@
  */
 package com.shaurya.intraday.trade.service;
 
-import static com.shaurya.intraday.util.HelperUtil.getTradeQuantity;
 import static com.shaurya.intraday.util.HelperUtil.isIntradayClosingTime;
 
+import com.shaurya.intraday.strategy.OpeningRangeBreakoutV2Strategy;
+import com.shaurya.intraday.strategy.impl.OpeningRangeBreakoutV2StrategyImpl;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -78,22 +79,34 @@ public class TradeProcessorImpl implements TradeProcessor {
           tradeService.closeTrade(openTrade, TradeExitReason.CLOSING_TIME);
         }
       } else {
-        if (tradeCall != null && tradeCall.isExitOrder()) {
-          TradeExitReason reason = null;
-          if (tradeOrderService.getOrderStatus(tradeCall) == OrderStatusType.OPEN) {
-            tradeOrderService.placeExitCoverOrder(tradeCall);
-            reason = HelperUtil.takeProfitReached(candle, openTrade)
-                ? TradeExitReason.TAKE_PROFIT_REACHED
-                : HelperUtil.stopLossReached(candle, openTrade) ? TradeExitReason.STOP_LOSS_REACHED
-                    : TradeExitReason.STRATEGY_EXIT_CRITERIA_MET;
-          } else {
-            reason = TradeExitReason.HARD_STOP_LOSS_HIT;
-          }
-          tradeService.closeTrade(tradeCall, reason);
+        if (tradeCall != null) {
+          if (tradeCall.isExitOrder()) {
+            TradeExitReason reason = null;
+            if (tradeOrderService.getOrderStatus(tradeCall) == OrderStatusType.OPEN) {
+              tradeOrderService.placeExitCoverOrder(tradeCall);
+              reason = HelperUtil.takeProfitReached(candle, openTrade)
+                  ? TradeExitReason.TAKE_PROFIT_REACHED
+                  : HelperUtil.stopLossReached(candle, openTrade)
+                      ? TradeExitReason.STOP_LOSS_REACHED
+                      : TradeExitReason.STRATEGY_EXIT_CRITERIA_MET;
+            } else {
+              reason = TradeExitReason.HARD_STOP_LOSS_HIT;
+            }
+            tradeService.closeTrade(tradeCall, reason);
 
-          tradeCall = (tradeCall = strategyMap.get(candle.getSecurity()).processTrades(candle, null,
-              false)) != null ? tradeCall : null;
+            tradeCall =
+                (tradeCall = strategyMap.get(candle.getSecurity()).processTrades(candle, null,
+                    false)) != null ? tradeCall : null;
+          }
+
+          if (tradeCall.isTrailSl()) {
+            tradeOrderService.placeTrailSlOrder(tradeCall);
+            tradeService.updateTrailSlTrade(tradeCall);
+            //no further trade hence making this null
+            tradeCall = null;
+          }
         }
+
         if (tradeCall != null) {
           Integer quantity = tradeOrderService
               .getQuantityAsPerRisk(accountService.getFund(), tradeCall.getSl(),
@@ -231,6 +244,12 @@ public class TradeProcessorImpl implements TradeProcessor {
             OpeningRangeBreakoutStrategy orb = new OpeningRangeBreakoutStrategyImpl();
             orb.initializeSetup(cList);
             strategyMap.put(e.getKey().getSecurity(), orb);
+            break;
+          case OPENING_RANGE_BREAKOUT_V2:
+            cList = new ArrayList<>();
+            OpeningRangeBreakoutV2Strategy orbv2 = new OpeningRangeBreakoutV2StrategyImpl();
+            orbv2.initializeSetup(cList);
+            strategyMap.put(e.getKey().getSecurity(), orbv2);
             break;
           case GANN_SQUARE_9:
             //historical api not subscribed

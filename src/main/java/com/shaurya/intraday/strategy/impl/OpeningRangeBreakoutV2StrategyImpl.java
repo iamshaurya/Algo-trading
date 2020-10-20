@@ -6,6 +6,8 @@ import com.shaurya.intraday.enums.PositionType;
 import com.shaurya.intraday.model.Candle;
 import com.shaurya.intraday.model.StrategyModel;
 import com.shaurya.intraday.strategy.OpeningRangeBreakoutV2Strategy;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TreeSet;
@@ -46,12 +48,10 @@ public class OpeningRangeBreakoutV2StrategyImpl implements OpeningRangeBreakoutV
           rangeCandleSet.add(candle5min);
           Candle rangeCandle = formRangeCandle();
           firstRangeCandle = firstRangeCandle == null ? rangeCandle : firstRangeCandle;
-          high = firstRangeCandle.getHigh();
-          low = firstRangeCandle.getLow();
         } else {
           prevCandle = candle5min;
-          StrategyModel tradeCall = getTradeCall(candle5min, openTrade);
           updateSetup(candle5min);
+          StrategyModel tradeCall = getTradeCall(candle5min, openTrade);
           return tradeCall;
         }
       }
@@ -105,6 +105,8 @@ public class OpeningRangeBreakoutV2StrategyImpl implements OpeningRangeBreakoutV
         i++;
       }
       rangeCandleSet.clear();
+      high = rangeCandle.getHigh();
+      low = rangeCandle.getLow();
     }
     return rangeCandle;
   }
@@ -115,24 +117,26 @@ public class OpeningRangeBreakoutV2StrategyImpl implements OpeningRangeBreakoutV
     StrategyModel tradeCall = null;
     if (openTrade == null) {
       if (candle.getClose() > high) {
-        orbHappend = Boolean.TRUE;
-        if (reference == null) {
-          reference = ReferenceType.LOW;
-        }
         double longSl = (candle.getClose() - low);
         tradeCall = new StrategyModel(candle.getToken(), PositionType.LONG, longSl,
             candle.getClose(),
             candle.getSecurity(), null, 0, false);
+        if (reference == null && !orbHappend) {
+          reference = ReferenceType.LOW;
+          orbHappend = Boolean.TRUE;
+          updateSetup(candle);
+        }
       }
       if (candle.getClose() < low) {
-        orbHappend = Boolean.TRUE;
-        if (reference == null) {
-          reference = ReferenceType.HIGH;
-        }
         double shortSl = (high - candle.getClose());
         tradeCall = new StrategyModel(candle.getToken(), PositionType.SHORT, shortSl,
             candle.getClose(),
             candle.getSecurity(), null, 0, false);
+        if (reference == null && !orbHappend) {
+          reference = ReferenceType.HIGH;
+          orbHappend = Boolean.TRUE;
+          updateSetup(candle);
+        }
       }
     } else {
       if (stopLossReached(candle, openTrade)) {
@@ -142,26 +146,39 @@ public class OpeningRangeBreakoutV2StrategyImpl implements OpeningRangeBreakoutV
       } else {
         switch (openTrade.getPosition()) {
           case LONG:
-            Double currentLongSl = openTrade.getTradePrice() - openTrade.getSl();
+            Double currentLongSl = BigDecimal
+                .valueOf(openTrade.getTradePrice() - openTrade.getSl())
+                .setScale(2, RoundingMode.HALF_UP).doubleValue();
             if (low > currentLongSl) {
+              log.error("Current open long trade {}", openTrade);
               log.error("Trailing long sl to {} for canlde {}", low, candle);
-              Double newLongSl = openTrade.getTradePrice() - low;
+              Double newLongSl = BigDecimal
+                  .valueOf(openTrade.getTradePrice() - low)
+                  .setScale(2, RoundingMode.HALF_UP).doubleValue();
+              log.error("Trailing long sl to new long sl {}", newLongSl);
               tradeCall = new StrategyModel(candle.getToken(), openTrade.getPosition(),
-                  newLongSl, candle.getClose(), openTrade.getSecurity(),
+                  newLongSl, openTrade.getTradePrice(), openTrade.getSecurity(),
                   openTrade.getOrderId(), openTrade.getQuantity(), false);
               tradeCall.setTrailSl(Boolean.TRUE);
             }
             break;
           case SHORT:
-            Double currentShortSl = openTrade.getTradePrice() + openTrade.getSl();
+            Double currentShortSl = BigDecimal
+                .valueOf(openTrade.getTradePrice() + openTrade.getSl())
+                .setScale(2, RoundingMode.HALF_UP).doubleValue();
             if (high < currentShortSl) {
+              log.error("Current open short trade {}", openTrade);
               log.error("Trailing short sl to {} for canlde {}", high, candle);
-              Double newShortSl = high - openTrade.getTradePrice();
+              Double newShortSl = BigDecimal
+                  .valueOf(high - openTrade.getTradePrice())
+                  .setScale(2, RoundingMode.HALF_UP).doubleValue();
+              log.error("Trailing short sl to new short sl {}", newShortSl);
               tradeCall = new StrategyModel(candle.getToken(), openTrade.getPosition(),
-                  newShortSl, candle.getClose(), openTrade.getSecurity(),
+                  newShortSl, openTrade.getTradePrice(), openTrade.getSecurity(),
                   openTrade.getOrderId(), openTrade.getQuantity(), false);
               tradeCall.setTrailSl(Boolean.TRUE);
             }
+            break;
         }
       }
     }
@@ -206,29 +223,33 @@ public class OpeningRangeBreakoutV2StrategyImpl implements OpeningRangeBreakoutV
   private void updateSwingHighLow(final Boolean recursive, final Candle candle) {
     if (reference.equals(ReferenceType.LOW)) {
       //check and update auxillary high
-      if (candle.getHigh() >= ((1 + deviationPercentage) * low)) {
+      if (candle.getHigh() >= ((1 + deviationPercentage) * low) && candle.getHigh() > maxAuxHigh) {
         maxAuxHigh = Math.max(candle.getHigh(), maxAuxHigh);
-      }
-      //check and udpate if new high confirmed
-      if (candle.getLow() <= ((1 - deviationPercentage) * maxAuxHigh) && !recursive) {
-        high = maxAuxHigh;
-        maxAuxHigh = Double.MIN_VALUE;
-        reference = ReferenceType.HIGH;
-        updateSwingHighLow(Boolean.TRUE, candle);
+      } else {
+        //check and udpate if new high confirmed
+        if (candle.getLow() <= ((1 - deviationPercentage) * maxAuxHigh) && !recursive) {
+          high = maxAuxHigh;
+          maxAuxHigh = Double.MIN_VALUE;
+          reference = ReferenceType.HIGH;
+          updateSwingHighLow(Boolean.TRUE, candle);
+          return;
+        }
       }
     }
 
     if (reference.equals(ReferenceType.HIGH)) {
       //check and update auxillary low
-      if (candle.getLow() <= ((1 - deviationPercentage) * high)) {
+      if (candle.getLow() <= ((1 - deviationPercentage) * high) && candle.getLow() < minAuxLow) {
         minAuxLow = Math.min(candle.getLow(), minAuxLow);
-      }
-      //check and udpate if new low confirmed
-      if (candle.getHigh() >= ((1 + deviationPercentage) * minAuxLow) && !recursive) {
-        low = minAuxLow;
-        minAuxLow = Double.MAX_VALUE;
-        reference = ReferenceType.LOW;
-        updateSwingHighLow(Boolean.TRUE, candle);
+      } else {
+        //check and udpate if new low confirmed
+        if (candle.getHigh() >= ((1 + deviationPercentage) * minAuxLow) && !recursive) {
+          low = minAuxLow;
+          minAuxLow = Double.MAX_VALUE;
+          reference = ReferenceType.LOW;
+          updateSwingHighLow(Boolean.TRUE, candle);
+          return;
+        }
       }
     }
   }

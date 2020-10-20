@@ -3,6 +3,7 @@
  */
 package com.shaurya.intraday.trade.service;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.shaurya.intraday.util.JsonParser;
 import java.io.IOException;
 import java.util.List;
@@ -112,6 +113,7 @@ public class TradeOrderServiceImpl implements TradeOrderService {
   @Override
   public StrategyModel placeTrailSlOrder(StrategyModel model)
       throws JSONException, IOException, KiteException {
+    log.info("trailing sl for model {}", JsonParser.objectToJson(model));
     List<Order> orders = loginService.getSdkClient().getOrders();
     Order order = null;
     for (Order or : orders) {

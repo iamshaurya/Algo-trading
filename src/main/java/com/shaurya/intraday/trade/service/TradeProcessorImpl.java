@@ -99,7 +99,8 @@ public class TradeProcessorImpl implements TradeProcessor {
                     false)) != null ? tradeCall : null;
           }
 
-          if (tradeCall.isTrailSl()) {
+          if (tradeCall != null &&  tradeCall.isTrailSl()) {
+            tradeCall.setExchangeType(metadataMap.get(candle.getSecurity()).getExchangeType());
             tradeOrderService.placeTrailSlOrder(tradeCall);
             tradeService.updateTrailSlTrade(tradeCall);
             //no further trade hence making this null

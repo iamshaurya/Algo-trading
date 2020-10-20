@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStrategy {
-
+  private final double rangePercentage = 0.0075;
   //5 orb min
   //range candle count = n min/5 | 5/5 = 1
   private static final int rangeCandleCount = 1;
@@ -112,13 +112,13 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
     log.error("current close {}", candle.getClose());
     StrategyModel tradeCall = null;
     if (openTrade == null) {
-      if (candle.getClose() > firstRangeCandle.getHigh()) {
+      if (candle.getClose() > firstRangeCandle.getHigh() && permisibleRange()) {
         double longSl = (candle.getClose() - firstRangeCandle.getLow());
         tradeCall = new StrategyModel(candle.getToken(), PositionType.LONG, longSl,
             candle.getClose(),
             candle.getSecurity(), null, 0, false);
       }
-      if (candle.getClose() < firstRangeCandle.getLow()) {
+      if (candle.getClose() < firstRangeCandle.getLow() && permisibleRange()) {
         double shortSl = (firstRangeCandle.getHigh() - candle.getClose());
         tradeCall = new StrategyModel(candle.getToken(), PositionType.SHORT, shortSl,
             candle.getClose(),
@@ -133,6 +133,11 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
     }
     return tradeCall;
 
+  }
+
+  private boolean permisibleRange() {
+    return (firstRangeCandle.getHigh() - firstRangeCandle.getLow()) <= (rangePercentage
+        * firstRangeCandle.getClose());
   }
 
   @Override

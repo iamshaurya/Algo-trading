@@ -8,18 +8,21 @@ import com.shaurya.intraday.enums.IntervalType;
 import com.shaurya.intraday.enums.StrategyType;
 import com.shaurya.intraday.model.Candle;
 import com.shaurya.intraday.model.MailAccount;
+import com.shaurya.intraday.model.StockBeta;
 import com.shaurya.intraday.model.StrategyModel;
-import com.shaurya.intraday.model.UpdateStrategyDto;
 import com.shaurya.intraday.trade.service.SetupServiceImpl;
 import com.shaurya.intraday.trade.service.TradeService;
-import com.shaurya.intraday.util.HelperUtil;
+import com.shaurya.intraday.util.HttpClientService;
 import com.shaurya.intraday.util.MailSender;
 import com.zerodhatech.kiteconnect.kitehttp.exceptions.KiteException;
-import java.io.File;
+import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -27,11 +30,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
-import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.format.CellFormatType;
+import org.apache.http.HttpResponse;
+import org.apache.http.util.EntityUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -39,11 +43,11 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.CollectionUtils;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -59,12 +63,18 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/v1")
 public class TradeController {
 
+  private static final String volatility_sdf = "ddMMyyyy";
+
   @Autowired
   private SetupServiceImpl setupService;
   @Autowired
   private TradeService tradeService;
   @Autowired
   private MailAccount mailAccount;
+  @Value("${nse.stock.list.url}")
+  private String nifty50Url;
+  @Value("${nse.daily.volatilty.report.url}")
+  private String niftyDailyVolatilityUrl;
 
   @RequestMapping(value = "/startup/login", method = RequestMethod.GET)
   public ResponseEntity<Boolean> startUpLogin() {
@@ -153,10 +163,11 @@ public class TradeController {
   }
 
   @RequestMapping(value = "/update/strategies", method = RequestMethod.GET)
-  public ResponseEntity<String> updateStrategies(@RequestParam List<String> name)
+  public ResponseEntity<String> updateStrategies()
       throws IOException, KiteException {
+    List<String> name = getTodaysVolatileStocks();
     if (name == null || CollectionUtils.isEmpty(name)) {
-      tradeService.updateAllStockToMonitorStock();
+      //tradeService.updateAllStockToMonitorStock();
       return new ResponseEntity<>("Request or names can not be null", HttpStatus.BAD_REQUEST);
     }
     Map<Long, String> tokenNameMap = tradeService.getNameTokenMap();
@@ -179,11 +190,62 @@ public class TradeController {
     return new ResponseEntity<>(HttpStatus.OK);
   }
 
+  @RequestMapping(value = "/holidays", method = RequestMethod.GET)
+  public ResponseEntity<Boolean> getHolidayList(final @RequestParam(value = "date", required = true) String dateStr)
+      throws ParseException {
+    Set<Date> holidays = tradeService.getHolidayDates();
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+    Date date = sdf.parse(dateStr);
+    return new ResponseEntity<>(holidays.contains(date), HttpStatus.OK);
+  }
+
+  private List<String> getTodaysVolatileStocks() throws IOException {
+    List<String> filteredStocks = new ArrayList<>();
+    TreeSet<StockBeta> stockBetas = new TreeSet<>();
+    Map<String, Double> volatilityMap = new HashMap<>();
+    HttpResponse response = (HttpResponse) HttpClientService
+        .executeGetRequest(nifty50Url, new ArrayList<>());
+    if (response != null && response.getStatusLine().getStatusCode() == 200) {
+      String nifty50ResStr = EntityUtils.toString(response.getEntity());
+      String[] nifty50Arr = nifty50ResStr.split("\n");
+      for (int i = 1; i < nifty50Arr.length; i++) {
+        String[] row = nifty50Arr[i].split(",");
+        volatilityMap.put(row[2], 0.0);
+      }
+      SimpleDateFormat sdf = new SimpleDateFormat(volatility_sdf);
+      String dailyVoltilityListUrl = niftyDailyVolatilityUrl + sdf.format(new Date()) + ".CSV";
+      HttpResponse dailyVolatilityResponse = (HttpResponse) HttpClientService
+          .executeGetRequest(dailyVoltilityListUrl, new ArrayList<>());
+      if (dailyVolatilityResponse != null
+          && dailyVolatilityResponse.getStatusLine().getStatusCode() == 200) {
+        String dailyVolatilityResponseStr = EntityUtils
+            .toString(dailyVolatilityResponse.getEntity());
+        String[] dailyVolatilityArr = dailyVolatilityResponseStr.split("\n");
+        for (int i = 1; i < dailyVolatilityArr.length; i++) {
+          String[] row = dailyVolatilityArr[i].split(",");
+          if (volatilityMap.get(row[1]) != null && Double.valueOf(row[2]) >= 50.0) {
+            stockBetas.add(new StockBeta(Double.valueOf(row[row.length - 2]), row[1]));
+          }
+        }
+      }
+    }
+
+    int i = 0;
+    for (StockBeta e : stockBetas) {
+      if (i >= 10) {
+        break;
+      }
+      filteredStocks.add(e.getName());
+      i++;
+    }
+    return filteredStocks;
+  }
+
   @RequestMapping(value = "/update/strategies/bulk", method = RequestMethod.POST)
   public ResponseEntity<String> updateStrategiesBulk(
       @RequestParam(value = "file", required = true) MultipartFile file)
       throws IOException, KiteException {
-    List<String> name = readStockFromXlsx(file.getInputStream());
+    Map<String, Double> name = readStockFromCsv(file.getInputStream());
     if (name == null || CollectionUtils.isEmpty(name)) {
       tradeService.updateAllStockToMonitorStock();
       return new ResponseEntity<>("Request or names can not be null", HttpStatus.BAD_REQUEST);
@@ -196,13 +258,13 @@ public class TradeController {
     for (Entry<Long, String> e : tokenNameMap.entrySet()) {
       reverseTokenNameMap.put(e.getValue(), e.getKey());
     }
-    List<Long> tokenList = new ArrayList<>();
-    for (String s : name) {
-      if (reverseTokenNameMap.get(s) == null) {
+    Map<Long, Double> tokenList = new HashMap<>();
+    for (Entry<String, Double> s : name.entrySet()) {
+      if (reverseTokenNameMap.get(s.getKey()) == null) {
         return new ResponseEntity<>("No token found for " + s + " please check spelling!",
             HttpStatus.BAD_REQUEST);
       }
-      tokenList.add(reverseTokenNameMap.get(s));
+      tokenList.put(reverseTokenNameMap.get(s.getKey()), s.getValue());
     }
     updateNextDayStocks(tokenList);
     return new ResponseEntity<>(HttpStatus.OK);
@@ -224,7 +286,8 @@ public class TradeController {
         while (cellIterator.hasNext()) {
 
           Cell currentCell = cellIterator.next();
-          if (currentCell.getColumnIndex() == 2 && !currentCell.getStringCellValue()
+          if (currentCell.getRowIndex() > 1 && currentCell.getColumnIndex() == 2 && !currentCell
+              .getStringCellValue()
               .contains("NIFTY")) {
             stockList.add(currentCell.getStringCellValue());
           }
@@ -239,10 +302,41 @@ public class TradeController {
     return stockList;
   }
 
+  private Map<String, Double> readStockFromCsv(InputStream file) {
+    Map<String, Double> stockList = new HashMap<>();
+    try {
+        BufferedReader oldBr = new BufferedReader(new InputStreamReader(file));
+        String data = null;
+        int i = 0;
+        while ((data = oldBr.readLine()) != null) {
+          if (i == 0) {
+            i++;
+            continue;
+          }
+          i++;
+          String[] dataArr = data.split(",");
+          stockList.put(dataArr[1],  Double.valueOf(dataArr[5]));
+        }
+    } catch (FileNotFoundException e) {
+      log.error("no file found {}", e);
+    } catch (IOException e) {
+      log.error("error in parsing xlsx file {}", e);
+    }
+    return stockList;
+  }
+
+  private void updateNextDayStocks(final Map<Long, Double> eligibleStocks) {
+    tradeService.updateAllStockToMonitorStock();
+    if (eligibleStocks.size() > 0) {
+      for(Entry<Long, Double> e: eligibleStocks.entrySet()) {
+        tradeService.updateTradeStocks(e.getKey(), e.getValue(), 0.005);
+      }
+    }
+  }
+
   private void updateNextDayStocks(final List<Long> eligibleStocks) {
     tradeService.updateAllStockToMonitorStock();
     if (eligibleStocks.size() > 0) {
-      //Double marginPortion = Math.min(0.05 / eligibleStocks.size(), 0.005);
       tradeService.updateTradeStocks(eligibleStocks, 0.005);
     }
   }

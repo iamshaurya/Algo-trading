@@ -15,8 +15,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class OpeningRangeBreakoutV2StrategyImpl implements OpeningRangeBreakoutV2Strategy {
-
-  private final double deviationPercentage = 0.005;
+  private static final double rangePercentage = 0.0085;
+  private double deviationPercentage;
   private Double high;
   private Double low;
   private Double maxAuxHigh;
@@ -112,11 +112,11 @@ public class OpeningRangeBreakoutV2StrategyImpl implements OpeningRangeBreakoutV
   }
 
   private StrategyModel getTradeCall(Candle candle, StrategyModel openTrade) {
-    log.error("Current high {}, low {}", high, low);
+    log.error("Current high {}, low {}, deviation {}", high, low, deviationPercentage);
     log.error("current close {}", candle.getClose());
     StrategyModel tradeCall = null;
     if (openTrade == null) {
-      if (candle.getClose() > high) {
+      if (candle.getClose() > high && permisibleRange()) {
         double longSl = (candle.getClose() - low);
         tradeCall = new StrategyModel(candle.getToken(), PositionType.LONG, longSl,
             candle.getClose(),
@@ -127,7 +127,7 @@ public class OpeningRangeBreakoutV2StrategyImpl implements OpeningRangeBreakoutV
           updateSetup(candle);
         }
       }
-      if (candle.getClose() < low) {
+      if (candle.getClose() < low && permisibleRange()) {
         double shortSl = (high - candle.getClose());
         tradeCall = new StrategyModel(candle.getToken(), PositionType.SHORT, shortSl,
             candle.getClose(),
@@ -186,6 +186,11 @@ public class OpeningRangeBreakoutV2StrategyImpl implements OpeningRangeBreakoutV
 
   }
 
+  private boolean permisibleRange() {
+    /*return (high - low) <= (rangePercentage * high);*/
+    return true;
+  }
+
   @Override
   public void initializeSetup(List<Candle> cList) {
     rangeCandleSet = new TreeSet<>();
@@ -193,6 +198,14 @@ public class OpeningRangeBreakoutV2StrategyImpl implements OpeningRangeBreakoutV
     orbHappend = Boolean.FALSE;
     maxAuxHigh = Double.MIN_VALUE;
     minAuxLow = Double.MAX_VALUE;
+  }
+
+  // deviation range atr/5
+  @Override
+  public void setDeviationPercentage(double deviationPercentage) {
+    this.deviationPercentage = BigDecimal
+        .valueOf(deviationPercentage).divide(BigDecimal.valueOf(500))
+        .doubleValue();
   }
 
   @Override
@@ -210,6 +223,7 @@ public class OpeningRangeBreakoutV2StrategyImpl implements OpeningRangeBreakoutV
     high = Double.MIN_VALUE;
     low = Double.MAX_VALUE;
     reference = null;
+    deviationPercentage = 0.005;
   }
 
   @Override

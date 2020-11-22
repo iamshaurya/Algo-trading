@@ -35,6 +35,7 @@ public class StrategyModel {
 	private double marginPortion;
 	private boolean trailSl;
 	private ExchangeType exchangeType;
+	private double atr;
 
 	public StrategyModel() {
 

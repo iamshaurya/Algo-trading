@@ -10,13 +10,16 @@ import static com.shaurya.intraday.util.HelperUtil.getPrevTradingDate;
 
 import com.shaurya.intraday.entity.Performance;
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import lombok.extern.slf4j.Slf4j;
@@ -179,6 +182,9 @@ public class TradeServiceImpl implements TradeService {
         model.setQuantity(sl.getQuantity());
         model.setLotSize(sl.getLotSize());
         model.setExchangeType(sl.getExchangeType());
+        if (sl.getAtr() != null) {
+          model.setAtr(sl.getAtr());
+        }
         sMap.put(model, StrategyType.getEnumById(sl.getStrategyType()));
       }
     }
@@ -201,6 +207,9 @@ public class TradeServiceImpl implements TradeService {
         model.setQuantity(sl.getQuantity());
         model.setLotSize(sl.getLotSize());
         model.setExchangeType(sl.getExchangeType());
+        if (sl.getAtr() != null) {
+          model.setAtr(sl.getAtr());
+        }
         sMap.put(model, StrategyType.getEnumById(sl.getStrategyType()));
       }
     }
@@ -220,6 +229,7 @@ public class TradeServiceImpl implements TradeService {
         model.setSecurityToken(sl.getSecurityToken());
         model.setPreferedPosition(PositionType.getEnumById(sl.getPreferedPosition()));
         model.setMarginMultiplier(sl.getMarginMultiplier());
+        model.setAtr(sl.getAtr());
         sMap.put(model, StrategyType.getEnumById(sl.getStrategyType()));
       }
     }
@@ -511,6 +521,20 @@ public class TradeServiceImpl implements TradeService {
   }
 
   @Override
+  public Set<Date> getHolidayDates() {
+    Set<Date> holidays = new HashSet<>();
+    List<Object[]> holidayList = tradeRepo
+        .runNativeQuery(TradeQueryBuilder.nativeQueryToFetchHolidays());
+    if (holidayList != null && !holidayList.isEmpty()) {
+      for (Object nt : holidayList) {
+        holidays.add(new Date(((Timestamp)nt).getTime()));
+      }
+    }
+    return holidays;
+
+  }
+
+  @Override
   public void recordMonitorStock(Candle candle) {
     if (monitorStockMap == null) {
       monitorStockMap = new HashMap<>();
@@ -542,6 +566,12 @@ public class TradeServiceImpl implements TradeService {
   public void updateTradeStocks(List<Long> eligibleStocks, Double marginPortion) {
     strategyRepo.runNativeQueryForUpdate(
         TradeQueryBuilder.queryToUpdateTradeStock(eligibleStocks, marginPortion));
+  }
+
+  @Override
+  public void updateTradeStocks(Long eligibleStock, Double atr, Double marginPortion) {
+    strategyRepo.runNativeQueryForUpdate(
+        TradeQueryBuilder.queryToUpdateTradeStock(eligibleStock, atr, marginPortion));
   }
 
   @Override

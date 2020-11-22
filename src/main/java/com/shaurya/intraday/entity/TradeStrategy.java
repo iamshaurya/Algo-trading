@@ -50,4 +50,6 @@ public class TradeStrategy {
 	@Column(name = "exchange_type")
 	@Enumerated(EnumType.STRING)
 	private ExchangeType exchangeType;
+	@Column(name = "atr")
+	private Double atr;
 }

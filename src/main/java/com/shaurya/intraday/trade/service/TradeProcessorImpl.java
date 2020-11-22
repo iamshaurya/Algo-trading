@@ -250,6 +250,7 @@ public class TradeProcessorImpl implements TradeProcessor {
             cList = new ArrayList<>();
             OpeningRangeBreakoutV2Strategy orbv2 = new OpeningRangeBreakoutV2StrategyImpl();
             orbv2.initializeSetup(cList);
+            orbv2.setDeviationPercentage(e.getKey().getAtr());
             strategyMap.put(e.getKey().getSecurity(), orbv2);
             break;
           case GANN_SQUARE_9:

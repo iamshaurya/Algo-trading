@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStrategy {
-  private final double rangePercentage = 0.0075;
+  private final double rangePercentage = 0.0085;
   //5 orb min
   //range candle count = n min/5 | 5/5 = 1
   private static final int rangeCandleCount = 1;
@@ -29,6 +29,8 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
   private TreeSet<Candle> candleSet;
   private Candle firstRangeCandle;
   private Candle prevCandle;
+  private int tradeCount = 0;
+  private static final int tradeCountThreshold = 3;
 
   /*
    * (non-Javadoc)
@@ -112,17 +114,19 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
     log.error("current close {}", candle.getClose());
     StrategyModel tradeCall = null;
     if (openTrade == null) {
-      if (candle.getClose() > firstRangeCandle.getHigh() && permisibleRange()) {
+      if (candle.getClose() > firstRangeCandle.getHigh() && tradePermitted()) {
         double longSl = (candle.getClose() - firstRangeCandle.getLow());
         tradeCall = new StrategyModel(candle.getToken(), PositionType.LONG, longSl,
             candle.getClose(),
             candle.getSecurity(), null, 0, false);
+        tradeCount++;
       }
-      if (candle.getClose() < firstRangeCandle.getLow() && permisibleRange()) {
+      if (candle.getClose() < firstRangeCandle.getLow() && tradePermitted()) {
         double shortSl = (firstRangeCandle.getHigh() - candle.getClose());
         tradeCall = new StrategyModel(candle.getToken(), PositionType.SHORT, shortSl,
             candle.getClose(),
             candle.getSecurity(), null, 0, false);
+        tradeCount++;
       }
     } else {
       if (stopLossReached(candle, openTrade)) {
@@ -135,15 +139,17 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
 
   }
 
-  private boolean permisibleRange() {
-    return (firstRangeCandle.getHigh() - firstRangeCandle.getLow()) <= (rangePercentage
-        * firstRangeCandle.getClose());
+  private boolean tradePermitted() {
+    /*return (firstRangeCandle.getHigh() - firstRangeCandle.getLow()) <= (rangePercentage
+        * firstRangeCandle.getClose());*/
+    return tradeCount < tradeCountThreshold;
   }
 
   @Override
   public void initializeSetup(List<Candle> cList) {
     rangeCandleSet = new TreeSet<>();
     candleSet = new TreeSet<>();
+    tradeCount = 0;
   }
 
   @Override
@@ -154,6 +160,7 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
     candleSet.clear();
     rangeCandleSet = null;
     candleSet = null;
+    tradeCount =  0;
   }
 
   @Override

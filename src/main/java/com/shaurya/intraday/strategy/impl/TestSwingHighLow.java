@@ -24,8 +24,11 @@ public class TestSwingHighLow {
 
   public static void mainL(String[] args){
     Double a = BigDecimal.valueOf(193.1500 + 1.8).setScale(2, RoundingMode.HALF_UP).doubleValue();
+    Double b = BigDecimal
+        .valueOf(4.5).divide(BigDecimal.valueOf(500))
+        .doubleValue();
 
-    System.out.println(a);
+    System.out.println("deviation : "+b);
   }
 
   public static void mainT(String[] args) {

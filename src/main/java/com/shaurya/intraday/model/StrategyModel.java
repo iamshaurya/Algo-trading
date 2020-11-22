@@ -4,6 +4,7 @@
 package com.shaurya.intraday.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.shaurya.intraday.enums.ExchangeType;
 import com.shaurya.intraday.enums.PositionType;
 
@@ -35,6 +36,7 @@ public class StrategyModel {
 	private double marginPortion;
 	private boolean trailSl;
 	private ExchangeType exchangeType;
+	@JsonProperty("beta")
 	private double atr;
 
 	public StrategyModel() {

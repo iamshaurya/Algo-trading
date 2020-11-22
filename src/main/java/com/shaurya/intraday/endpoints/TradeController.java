@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpResponse;
@@ -72,7 +71,9 @@ public class TradeController {
   @Autowired
   private MailAccount mailAccount;
   @Value("${nse.stock.list.url}")
-  private String nifty50Url;
+  private String niftyStocksUrl;
+  @Value("${nse.stock.high.beta.list.url}")
+  private String highBetaUrl;
   @Value("${nse.daily.volatilty.report.url}")
   private String niftyDailyVolatilityUrl;
 
@@ -165,7 +166,7 @@ public class TradeController {
   @RequestMapping(value = "/update/strategies", method = RequestMethod.GET)
   public ResponseEntity<String> updateStrategies()
       throws IOException, KiteException {
-    List<String> name = getTodaysVolatileStocks();
+    List<StockBeta> name = getTodaysVolatileStocks();
     if (name == null || CollectionUtils.isEmpty(name)) {
       //tradeService.updateAllStockToMonitorStock();
       return new ResponseEntity<>("Request or names can not be null", HttpStatus.BAD_REQUEST);
@@ -178,13 +179,13 @@ public class TradeController {
     for (Entry<Long, String> e : tokenNameMap.entrySet()) {
       reverseTokenNameMap.put(e.getValue(), e.getKey());
     }
-    List<Long> tokenList = new ArrayList<>();
-    for (String s : name) {
-      if (reverseTokenNameMap.get(s) == null) {
+    Map<Long, Double> tokenList = new HashMap<>();
+    for (StockBeta s : name) {
+      if (reverseTokenNameMap.get(s.getName()) == null) {
         return new ResponseEntity<>("No token found for " + s + " please check spelling!",
             HttpStatus.BAD_REQUEST);
       }
-      tokenList.add(reverseTokenNameMap.get(s));
+      tokenList.put(reverseTokenNameMap.get(s.getName()), s.getBeta() * 100);
     }
     updateNextDayStocks(tokenList);
     return new ResponseEntity<>(HttpStatus.OK);
@@ -199,32 +200,44 @@ public class TradeController {
     return new ResponseEntity<>(holidays.contains(date), HttpStatus.OK);
   }
 
-  private List<String> getTodaysVolatileStocks() throws IOException {
-    List<String> filteredStocks = new ArrayList<>();
+  private List<StockBeta> getTodaysVolatileStocks() throws IOException {
+    List<StockBeta> filteredStocks = new ArrayList<>();
     TreeSet<StockBeta> stockBetas = new TreeSet<>();
-    Map<String, Double> volatilityMap = new HashMap<>();
+    Map<String, Double> niftyStockMap = new HashMap<>();
+    Map<String, Double> highBetaMap = new HashMap<>();
     HttpResponse response = (HttpResponse) HttpClientService
-        .executeGetRequest(nifty50Url, new ArrayList<>());
+        .executeGetRequest(niftyStocksUrl, new ArrayList<>());
     if (response != null && response.getStatusLine().getStatusCode() == 200) {
-      String nifty50ResStr = EntityUtils.toString(response.getEntity());
-      String[] nifty50Arr = nifty50ResStr.split("\n");
-      for (int i = 1; i < nifty50Arr.length; i++) {
-        String[] row = nifty50Arr[i].split(",");
-        volatilityMap.put(row[2], 0.0);
+      String niftyStockResStr = EntityUtils.toString(response.getEntity());
+      String[] niftyStockArr = niftyStockResStr.split("\n");
+      for (int i = 1; i < niftyStockArr.length; i++) {
+        String[] row = niftyStockArr[i].split(",");
+        niftyStockMap.put(row[2], 0.0);
       }
-      SimpleDateFormat sdf = new SimpleDateFormat(volatility_sdf);
-      String dailyVoltilityListUrl = niftyDailyVolatilityUrl + sdf.format(new Date()) + ".CSV";
-      HttpResponse dailyVolatilityResponse = (HttpResponse) HttpClientService
-          .executeGetRequest(dailyVoltilityListUrl, new ArrayList<>());
-      if (dailyVolatilityResponse != null
-          && dailyVolatilityResponse.getStatusLine().getStatusCode() == 200) {
-        String dailyVolatilityResponseStr = EntityUtils
-            .toString(dailyVolatilityResponse.getEntity());
-        String[] dailyVolatilityArr = dailyVolatilityResponseStr.split("\n");
-        for (int i = 1; i < dailyVolatilityArr.length; i++) {
-          String[] row = dailyVolatilityArr[i].split(",");
-          if (volatilityMap.get(row[1]) != null && Double.valueOf(row[2]) >= 50.0) {
-            stockBetas.add(new StockBeta(Double.valueOf(row[row.length - 2]), row[1]));
+      HttpResponse responsehighBeta = (HttpResponse) HttpClientService
+          .executeGetRequest(highBetaUrl, new ArrayList<>());
+      if (responsehighBeta != null && responsehighBeta.getStatusLine().getStatusCode() == 200) {
+        String highBetaResStr = EntityUtils.toString(responsehighBeta.getEntity());
+        String[] highBetaArr = highBetaResStr.split("\n");
+        for (int i = 1; i < highBetaArr.length; i++) {
+          String[] row = highBetaArr[i].split(",");
+          highBetaMap.put(row[2], 0.0);
+        }
+        SimpleDateFormat sdf = new SimpleDateFormat(volatility_sdf);
+        String dailyVoltilityListUrl = niftyDailyVolatilityUrl + sdf.format(new Date()) + ".CSV";
+        HttpResponse dailyVolatilityResponse = (HttpResponse) HttpClientService
+            .executeGetRequest(dailyVoltilityListUrl, new ArrayList<>());
+        if (dailyVolatilityResponse != null
+            && dailyVolatilityResponse.getStatusLine().getStatusCode() == 200) {
+          String dailyVolatilityResponseStr = EntityUtils
+              .toString(dailyVolatilityResponse.getEntity());
+          String[] dailyVolatilityArr = dailyVolatilityResponseStr.split("\n");
+          for (int i = 1; i < dailyVolatilityArr.length; i++) {
+            String[] row = dailyVolatilityArr[i].split(",");
+            if (niftyStockMap.get(row[1]) != null && highBetaMap.get(row[1]) != null
+                && Double.valueOf(row[2]) >= 50.0) {
+              stockBetas.add(new StockBeta(Double.valueOf(row[row.length - 2]), row[1]));
+            }
           }
         }
       }
@@ -235,7 +248,7 @@ public class TradeController {
       if (i >= 10) {
         break;
       }
-      filteredStocks.add(e.getName());
+      filteredStocks.add(e);
       i++;
     }
     return filteredStocks;

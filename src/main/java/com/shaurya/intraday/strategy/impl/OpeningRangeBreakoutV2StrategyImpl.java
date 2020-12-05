@@ -125,6 +125,11 @@ public class OpeningRangeBreakoutV2StrategyImpl implements OpeningRangeBreakoutV
           reference = ReferenceType.LOW;
           orbHappend = Boolean.TRUE;
           updateSetup(candle);
+        } else if (reference != null && !reference.equals(ReferenceType.LOW)) {
+          //handle case when first candle range is less than deviation
+          reference = ReferenceType.LOW;
+          maxAuxHigh = Double.MIN_VALUE;
+          minAuxLow = Double.MAX_VALUE;
         }
       }
       if (candle.getClose() < low && permisibleRange()) {
@@ -136,6 +141,11 @@ public class OpeningRangeBreakoutV2StrategyImpl implements OpeningRangeBreakoutV
           reference = ReferenceType.HIGH;
           orbHappend = Boolean.TRUE;
           updateSetup(candle);
+        } else if (reference != null && !reference.equals(ReferenceType.HIGH)) {
+          //handle case when first candle range is less than deviation
+          reference = ReferenceType.HIGH;
+          maxAuxHigh = Double.MIN_VALUE;
+          minAuxLow = Double.MAX_VALUE;
         }
       }
     } else {

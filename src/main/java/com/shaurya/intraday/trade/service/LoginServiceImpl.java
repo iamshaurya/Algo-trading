@@ -100,9 +100,10 @@ public class LoginServiceImpl implements LoginService {
   }
 
   private void handleSessionExpired() {
-    log.error("session expired :: re-authenticate :: sending mail");
+    String mailBody = getSessionExpiredMailBody();
+    log.error("session expired :: re-authenticate :: sending mail :: " + mailBody);
     MailSender.sendMail(Constants.TO_MAIL, Constants.TO_NAME, Constants.SESSION_EXPIRED_SUBJECT,
-        getSessionExpiredMailBody(), mailAccount);
+        mailBody, mailAccount);
   }
 
   @Override

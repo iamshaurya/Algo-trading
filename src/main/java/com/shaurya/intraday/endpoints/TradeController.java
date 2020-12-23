@@ -10,6 +10,8 @@ import com.shaurya.intraday.model.Candle;
 import com.shaurya.intraday.model.MailAccount;
 import com.shaurya.intraday.model.StockBeta;
 import com.shaurya.intraday.model.StrategyModel;
+import com.shaurya.intraday.trade.backtest.service.BackTestService;
+import com.shaurya.intraday.trade.backtest.service.BackTestServiceV2;
 import com.shaurya.intraday.trade.service.SetupServiceImpl;
 import com.shaurya.intraday.trade.service.TradeService;
 import com.shaurya.intraday.util.HttpClientService;
@@ -63,7 +65,8 @@ import org.springframework.web.multipart.MultipartFile;
 public class TradeController {
 
   private static final String volatility_sdf = "ddMMyyyy";
-
+  @Autowired
+  private BackTestServiceV2 backTestServiceV2;
   @Autowired
   private SetupServiceImpl setupService;
   @Autowired
@@ -139,6 +142,15 @@ public class TradeController {
     return new ResponseEntity<>("Check mail", HttpStatus.OK);
   }
 
+  @RequestMapping(value = "/backtest", method = RequestMethod.GET)
+  public ResponseEntity<String> backtest(
+      final @RequestParam(value = "from", required = true) @DateTimeFormat(pattern = "dd-MM-yyyy") Date from,
+      final @RequestParam(value = "to", required = true) @DateTimeFormat(pattern = "dd-MM-yyyy") Date to)
+      throws IOException, KiteException {
+    backTestServiceV2.startBacktest(from, to);
+    return new ResponseEntity<>("Check mail", HttpStatus.OK);
+  }
+
   @RequestMapping(value = "/checkBalance", method = RequestMethod.GET)
   public ResponseEntity<Double> checkBalance() throws IOException, KiteException {
     return new ResponseEntity<Double>(tradeService.checkBalance(), HttpStatus.OK);
@@ -192,7 +204,8 @@ public class TradeController {
   }
 
   @RequestMapping(value = "/holidays", method = RequestMethod.GET)
-  public ResponseEntity<Boolean> getHolidayList(final @RequestParam(value = "date", required = true) String dateStr)
+  public ResponseEntity<Boolean> getHolidayList(
+      final @RequestParam(value = "date", required = true) String dateStr)
       throws ParseException {
     Set<Date> holidays = tradeService.getHolidayDates();
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
@@ -236,7 +249,7 @@ public class TradeController {
             String[] row = dailyVolatilityArr[i].split(",");
             if (niftyStockMap.get(row[1]) != null && highBetaMap.get(row[1]) != null
                 && Double.valueOf(row[2]) >= 50.0) {
-              stockBetas.add(new StockBeta(Double.valueOf(row[row.length - 2]), row[1]));
+              stockBetas.add(new StockBeta(Double.valueOf(row[row.length - 2]), row[1], null));
             }
           }
         }
@@ -318,18 +331,18 @@ public class TradeController {
   private Map<String, Double> readStockFromCsv(InputStream file) {
     Map<String, Double> stockList = new HashMap<>();
     try {
-        BufferedReader oldBr = new BufferedReader(new InputStreamReader(file));
-        String data = null;
-        int i = 0;
-        while ((data = oldBr.readLine()) != null) {
-          if (i == 0) {
-            i++;
-            continue;
-          }
+      BufferedReader oldBr = new BufferedReader(new InputStreamReader(file));
+      String data = null;
+      int i = 0;
+      while ((data = oldBr.readLine()) != null) {
+        if (i == 0) {
           i++;
-          String[] dataArr = data.split(",");
-          stockList.put(dataArr[1],  Double.valueOf(dataArr[5]));
+          continue;
         }
+        i++;
+        String[] dataArr = data.split(",");
+        stockList.put(dataArr[1], Double.valueOf(dataArr[5]));
+      }
     } catch (FileNotFoundException e) {
       log.error("no file found {}", e);
     } catch (IOException e) {
@@ -341,7 +354,7 @@ public class TradeController {
   private void updateNextDayStocks(final Map<Long, Double> eligibleStocks) {
     tradeService.updateAllStockToMonitorStock();
     if (eligibleStocks.size() > 0) {
-      for(Entry<Long, Double> e: eligibleStocks.entrySet()) {
+      for (Entry<Long, Double> e : eligibleStocks.entrySet()) {
         tradeService.updateTradeStocks(e.getKey(), e.getValue(), 0.005);
       }
     }

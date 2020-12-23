@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.shaurya.intraday.enums.ExchangeType;
 import com.shaurya.intraday.enums.PositionType;
 
+import java.util.Date;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -30,6 +31,7 @@ public class StrategyModel {
 	private int quantity;
 	private int lotSize;
 	private boolean exitOrder;
+	private boolean slhit;
 	private PositionType preferedPosition;
 	private double marginMultiplier;
 	private double tradeMargin;
@@ -38,6 +40,7 @@ public class StrategyModel {
 	private ExchangeType exchangeType;
 	@JsonProperty("beta")
 	private double atr;
+	private Date tradeDate;
 
 	public StrategyModel() {
 
@@ -55,6 +58,7 @@ public class StrategyModel {
 		this.sl = slPoint;
 		this.setTp(this.sl);
 		this.trailSl = false;
+		this.slhit = false;
 	}
 
 	public void trailSl(double tsl) {

@@ -87,6 +87,9 @@ public class TradeServiceImpl implements TradeService {
   @Override
   public StrategyModel openTrade(StrategyModel model) {
     Trade openTrade = TradeBuilder.convert(model);
+    if (model.getTradeDate() != null) {
+      openTrade.setTradeDate(model.getTradeDate());
+    }
     openTrade = tradeRepo.update(openTrade);
     return TradeBuilder.reverseConvert(openTrade, true);
   }
@@ -229,7 +232,9 @@ public class TradeServiceImpl implements TradeService {
         model.setSecurityToken(sl.getSecurityToken());
         model.setPreferedPosition(PositionType.getEnumById(sl.getPreferedPosition()));
         model.setMarginMultiplier(sl.getMarginMultiplier());
-        model.setAtr(sl.getAtr());
+        if (sl.getAtr() != null) {
+          model.setAtr(sl.getAtr());
+        }
         sMap.put(model, StrategyType.getEnumById(sl.getStrategyType()));
       }
     }
@@ -527,7 +532,7 @@ public class TradeServiceImpl implements TradeService {
         .runNativeQuery(TradeQueryBuilder.nativeQueryToFetchHolidays());
     if (holidayList != null && !holidayList.isEmpty()) {
       for (Object nt : holidayList) {
-        holidays.add(new Date(((Timestamp)nt).getTime()));
+        holidays.add(new Date(((Timestamp) nt).getTime()));
       }
     }
     return holidays;
@@ -572,6 +577,12 @@ public class TradeServiceImpl implements TradeService {
   public void updateTradeStocks(Long eligibleStock, Double atr, Double marginPortion) {
     strategyRepo.runNativeQueryForUpdate(
         TradeQueryBuilder.queryToUpdateTradeStock(eligibleStock, atr, marginPortion));
+  }
+
+  @Override
+  public void updateTradeStocks(String eligibleStockName, Double atr, Double marginPortion) {
+    strategyRepo.runNativeQueryForUpdate(
+        TradeQueryBuilder.queryToUpdateTradeStock(eligibleStockName, atr, marginPortion));
   }
 
   @Override

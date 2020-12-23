@@ -32,6 +32,38 @@ public class HelperUtil {
     return map;
   }
 
+  public static TreeSet<Candle> form5MinCandle(TreeSet<Candle> candles) {
+    TreeSet<Candle> candleSet5min = new TreeSet<>();
+    TreeSet<Candle> candle5Set = new TreeSet<>();
+
+    for (Candle c : candles) {
+      candle5Set.add(c);
+      if (candle5Set.size() == 5) {
+        Candle candle5min = null;
+        int i = 0;
+        Iterator<Candle> cItr = candle5Set.iterator();
+        while (cItr.hasNext()) {
+          Candle cs = cItr.next();
+          if (i == 0) {
+            candle5min = new Candle(cs.getSecurity(), cs.getToken(), cs.getTime(), cs.getOpen(),
+                cs.getHigh(),
+                cs.getLow(), cs.getClose(), cs.getVolume());
+          } else {
+            candle5min.setClose(cs.getClose());
+            candle5min.setHigh(Math.max(candle5min.getHigh(), cs.getHigh()));
+            candle5min.setLow(Math.min(candle5min.getLow(), cs.getLow()));
+            candle5min.setVolume(candle5min.getVolume() + cs.getVolume());
+          }
+          i++;
+        }
+        candle5Set.clear();
+        candleSet5min.add(candle5min);
+      }
+    }
+
+    return candleSet5min;
+  }
+
   public static Date getDate(String date) {
     return new DateTime(date).toDate();
   }
@@ -160,6 +192,16 @@ public class HelperUtil {
     return closeTime;
   }
 
+  public static Calendar getDayEndTime(Date date) {
+    Calendar closeTime = Calendar.getInstance();
+    closeTime.setTime(date);
+    closeTime.set(Calendar.HOUR_OF_DAY, 15);
+    closeTime.set(Calendar.MINUTE, 30);
+    closeTime.set(Calendar.SECOND, 5);
+    closeTime.set(Calendar.MILLISECOND, 0);
+    return closeTime;
+  }
+
   public static Calendar getDayStartTime() {
     Calendar openTime = Calendar.getInstance();
     openTime.set(Calendar.HOUR_OF_DAY, 9);
@@ -169,8 +211,19 @@ public class HelperUtil {
     return openTime;
   }
 
+  public static Calendar getDayStartTime(Date date) {
+    Calendar openTime = Calendar.getInstance();
+    openTime.setTime(date);
+    openTime.set(Calendar.HOUR_OF_DAY, 9);
+    openTime.set(Calendar.MINUTE, 15);
+    openTime.set(Calendar.SECOND, 0);
+    openTime.set(Calendar.MILLISECOND, 0);
+    return openTime;
+  }
+
   public static boolean isIntradayClosingTime(Date time) {
     Calendar closeTime = Calendar.getInstance();
+    closeTime.setTime(time);
     closeTime.set(Calendar.HOUR_OF_DAY, 15);
     closeTime.set(Calendar.MINUTE, 18);
     closeTime.set(Calendar.SECOND, 0);
@@ -245,7 +298,11 @@ public class HelperUtil {
     while (cItr.hasNext()) {
       Candle c = cItr.next();
       if (i == 0) {
-        candleday = new Candle(c.getSecurity(), c.getToken(), c.getTime(), c.getOpen(),
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(c.getTime());
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        candleday = new Candle(c.getSecurity(), c.getToken(), cal.getTime(), c.getOpen(),
             c.getHigh(),
             c.getLow(), c.getClose(), 0);
       } else {

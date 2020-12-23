@@ -121,4 +121,17 @@ public class TradeQueryBuilder {
 		return cq;
 	}
 
+	public static CustomQueryHolder queryToUpdateTradeStock(String symbol, Double atr,
+			Double marginPortion) {
+		CustomQueryHolder cq = new CustomQueryHolder();
+		StringBuilder sb = new StringBuilder();
+		sb.append(
+				"update trade_strategy set day = 2 , atr = " + atr + " , margin_portion = " + marginPortion
+						+ " where security_name in ('" + StringUtil
+						.convertListToDelimetedString(Arrays.asList(symbol)) + "')");
+		cq.setQueryString(sb.toString());
+		cq.setInParamMap(new HashMap<>());
+		return cq;
+	}
+
 }

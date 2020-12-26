@@ -1,5 +1,6 @@
 package com.shaurya.intraday.entity;
 
+import java.util.Objects;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -19,7 +20,7 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class KiteAccountAudit {
+public class KiteAccountAudit implements Comparable<KiteAccountAudit>{
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,6 +29,35 @@ public class KiteAccountAudit {
   @Column(name = "account_id")
   private Integer accountId;
   @Column(name = "fund")
-  private Integer fund;
+  private Long fund;
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    KiteAccountAudit that = (KiteAccountAudit) o;
+    return Objects.equals(id, that.id);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id);
+  }
+
+  @Override
+  public int compareTo(KiteAccountAudit o) {
+    Integer a = this.id;
+    Integer b = o.id;
+    if (a > b) {
+      return 1;
+    } else if (a < b) {
+      return -1;
+    } else {
+      return 0;
+    }
+  }
 }

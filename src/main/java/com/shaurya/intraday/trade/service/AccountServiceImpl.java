@@ -6,6 +6,7 @@ package com.shaurya.intraday.trade.service;
 import com.shaurya.intraday.entity.KiteAccountAudit;
 import java.util.List;
 
+import java.util.TreeSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -42,7 +43,7 @@ public class AccountServiceImpl implements AccountService {
 
   @Override
   @Transactional(rollbackFor = Exception.class)
-  public void updateFundBalance(Integer totalFund) {
+  public void updateFundBalance(Long totalFund) {
     List<KiteAccount> accounts = accountRepo.fetchByQuery(AccountQueryBuilder.fetchAccountQuery());
     KiteAccount accountToUpdate = null;
     if (accounts != null && !accounts.isEmpty()) {
@@ -58,12 +59,23 @@ public class AccountServiceImpl implements AccountService {
 
 
   @Override
-  public Integer getFund() {
+  public Long getFund() {
     KiteAccount account = getAccount();
     if (account == null) {
-      return 0;
+      return 0l;
     }
     return account.getFund();
+  }
+
+  @Override
+  public TreeSet<KiteAccountAudit> getAllAuditData() {
+    List<KiteAccountAudit> kiteAccountAudits = this.accountAuditJpaRepo
+        .fetchByQuery(AccountQueryBuilder.fetchKiteAccountAuditData());
+    TreeSet<KiteAccountAudit> sortedAuditData = new TreeSet<>(kiteAccountAudits);
+    KiteAccountAudit latestAccountAudit = KiteAccountAudit.builder().fund(getFund())
+        .id(sortedAuditData.last().getId() + 1).build();
+    sortedAuditData.add(latestAccountAudit);
+    return sortedAuditData;
   }
 
 }

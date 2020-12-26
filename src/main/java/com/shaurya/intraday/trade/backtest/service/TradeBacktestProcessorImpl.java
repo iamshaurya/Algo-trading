@@ -166,7 +166,7 @@ public class TradeBacktestProcessorImpl implements TradeBacktestProcessor {
     return null;
   }
 
-  public Integer getQuantityAsPerRisk(final Integer equity, final Double slPoints,
+  public Integer getQuantityAsPerRisk(final Long equity, final Double slPoints,
       final Integer lotSize,
       final Double riskPerTradePer) {
     Double riskPerTrade = riskPerTradePer * equity;

@@ -150,6 +150,7 @@ public class TickerGenerator {
   //symbol, date, time, open, high, low, close, volume
   public static Candle parseAndGeneratePreOpenCandle(String symbol, Date date)
       throws IOException {
+    Candle noPreOpenCandle = null;
     SimpleDateFormat sdfYear = new SimpleDateFormat("yyyy");
     SimpleDateFormat sdfMonth = new SimpleDateFormat("MMM");
     SimpleDateFormat sdfMonthDate = new SimpleDateFormat("ddMMM");
@@ -175,10 +176,14 @@ public class TickerGenerator {
         cal.setTime(date);
         cal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(time[0]));
         cal.set(Calendar.MINUTE, Integer.parseInt(time[1]));
+        Candle candle =  new Candle(dataArr[0], 0, cal.getTime(), Double.parseDouble(dataArr[3]),
+            Double.parseDouble(dataArr[4]), Double.parseDouble(dataArr[5]),
+            Double.parseDouble(dataArr[6]), Double.parseDouble(dataArr[7]));
         if (cal.getTime().before(startCal.getTime())) {
-          return new Candle(dataArr[0], 0, cal.getTime(), Double.parseDouble(dataArr[3]),
-              Double.parseDouble(dataArr[4]), Double.parseDouble(dataArr[5]),
-              Double.parseDouble(dataArr[6]), Double.parseDouble(dataArr[7]));
+          return candle;
+        }else {
+          noPreOpenCandle = candle;
+          break;
         }
       }
     } finally {
@@ -186,12 +191,13 @@ public class TickerGenerator {
         br.close();
       }
     }
-    return null;
+    return noPreOpenCandle;
   }
 
   //symbol, date, time, open, high, low, close, volume
   public static Candle parseAndGeneratePostCloseCandle(String symbol, Date date)
       throws IOException {
+    Candle postCloseCandle = null;
     SimpleDateFormat sdfYear = new SimpleDateFormat("yyyy");
     SimpleDateFormat sdfMonth = new SimpleDateFormat("MMM");
     SimpleDateFormat sdfMonthDate = new SimpleDateFormat("ddMMM");
@@ -217,10 +223,12 @@ public class TickerGenerator {
         cal.setTime(date);
         cal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(time[0]));
         cal.set(Calendar.MINUTE, Integer.parseInt(time[1]));
+        Candle candle = new Candle(dataArr[0], 0, cal.getTime(), Double.parseDouble(dataArr[3]),
+            Double.parseDouble(dataArr[4]), Double.parseDouble(dataArr[5]),
+            Double.parseDouble(dataArr[6]), Double.parseDouble(dataArr[7]));
+        postCloseCandle = candle;
         if (cal.getTime().after(endCal.getTime())) {
-          return new Candle(dataArr[0], 0, cal.getTime(), Double.parseDouble(dataArr[3]),
-              Double.parseDouble(dataArr[4]), Double.parseDouble(dataArr[5]),
-              Double.parseDouble(dataArr[6]), Double.parseDouble(dataArr[7]));
+          return candle;
         }
       }
     } finally {
@@ -228,6 +236,6 @@ public class TickerGenerator {
         br.close();
       }
     }
-    return null;
+    return postCloseCandle;
   }
 }

@@ -80,7 +80,7 @@ public class LoginServiceImpl implements LoginService {
 
   private void refreshFundBalance() {
     try {
-      Integer totalFund = this.tradeOrderService.getTotalMargin().intValue();
+      Long totalFund = this.tradeOrderService.getTotalMargin().longValue();
       this.accountService.updateFundBalance(totalFund);
     } catch (IOException e) {
       log.error("something went wrong in fetching total margin {}", e);

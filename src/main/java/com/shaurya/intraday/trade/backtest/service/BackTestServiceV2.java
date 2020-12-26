@@ -173,7 +173,7 @@ public class BackTestServiceV2 {
       //performance.setMaxDrawDown();
 
       performanceRepo.update(performance);
-      this.accountService.updateFundBalance(currentEquity.intValue());
+      this.accountService.updateFundBalance(currentEquity.longValue());
     }
   }
 
@@ -184,9 +184,9 @@ public class BackTestServiceV2 {
     yearStart.set(Calendar.DATE, 1);
     Calendar cal = Calendar.getInstance();
     cal.setTime(date);
-    if(date.after(yearStart.getTime())){
+    if (date.after(yearStart.getTime())) {
       cal.roll(Calendar.DAY_OF_YEAR, -1);
-    }else{
+    } else {
       cal.roll(Calendar.YEAR, -1);
       cal.set(Calendar.MONTH, 11);
       cal.set(Calendar.DATE, 31);
@@ -197,9 +197,9 @@ public class BackTestServiceV2 {
       yearStartIn.setTime(cal.getTime());
       yearStartIn.set(Calendar.MONTH, 0);
       yearStartIn.set(Calendar.DATE, 1);
-      if(cal.getTime().after(yearStartIn.getTime())){
+      if (cal.getTime().after(yearStartIn.getTime())) {
         cal.roll(Calendar.DAY_OF_YEAR, -1);
-      }else{
+      } else {
         cal.roll(Calendar.YEAR, -1);
         cal.set(Calendar.MONTH, 11);
         cal.set(Calendar.DATE, 31);
@@ -255,21 +255,30 @@ public class BackTestServiceV2 {
   }
 
   private Double getPreOpenPer(String stock, Date today, Date yesterday) throws IOException {
-    if (TickerGenerator.checkIfDataExistForDateAndStock(stock, today) && TickerGenerator
-        .checkIfDataExistForDateAndStock(stock, yesterday)) {
-      Candle yesterdayPostCloseCandle = TickerGenerator
-          .parseAndGeneratePostCloseCandle(stock, yesterday);
-      Candle todayPreOpenCandle = TickerGenerator.parseAndGeneratePreOpenCandle(stock, today);
-      if (yesterdayPostCloseCandle != null && todayPreOpenCandle != null) {
-        Double yesterdayClose = yesterdayPostCloseCandle
-            .getClose();
-        Double preOpenValue = todayPreOpenCandle.getClose();
-        return Math.abs(((preOpenValue - yesterdayClose) / yesterdayClose) * 100);
-      } else {
-        System.out.println(
-            "yesterdayPostCloseCandle or todayPreOpenCandle is null for " + stock + "  todays date "
-                + today);
+    try {
+      if (TickerGenerator.checkIfDataExistForDateAndStock(stock, today) && TickerGenerator
+          .checkIfDataExistForDateAndStock(stock, yesterday)) {
+        Candle yesterdayPostCloseCandle = TickerGenerator
+            .parseAndGeneratePostCloseCandle(stock, yesterday);
+        Candle todayPreOpenCandle = TickerGenerator.parseAndGeneratePreOpenCandle(stock, today);
+        if (yesterdayPostCloseCandle != null && todayPreOpenCandle != null
+            && todayPreOpenCandle.getOpen() >= 50.0) {
+          Double yesterdayClose = yesterdayPostCloseCandle
+              .getClose();
+          Double preOpenValue = todayPreOpenCandle.getOpen();
+          return Math.abs(((preOpenValue - yesterdayClose) / yesterdayClose) * 100);
+        } else {
+          System.out.println(
+              "either open price less than 50 or yesterdayPostCloseCandle or todayPreOpenCandle is null for "
+                  + stock
+                  + "  todays date "
+                  + today);
+        }
       }
+    } catch (Exception e) {
+      e.printStackTrace();
+      System.out.println("Something went wrong for : " + stock + " date : " + today);
+      throw e;
     }
     return 0.0;
   }

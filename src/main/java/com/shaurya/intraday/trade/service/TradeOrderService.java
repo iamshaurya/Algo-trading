@@ -37,6 +37,6 @@ public interface TradeOrderService {
 
 	public Double getTotalMargin() throws JSONException, IOException, KiteException;
 
-	Integer getQuantityAsPerRisk(Integer fund, final Double slPoints, final Integer lotSize,
+	Integer getQuantityAsPerRisk(Long fund, final Double slPoints, final Integer lotSize,
 			final Double riskPerTradePer);
 }

@@ -20,4 +20,13 @@ public class AccountQueryBuilder {
 		cq.setInParamMap(new HashMap<>());
 		return cq;
 	}
+
+	public static CustomQueryHolder fetchKiteAccountAuditData() {
+		CustomQueryHolder cq = new CustomQueryHolder();
+		StringBuilder sb = new StringBuilder();
+		sb.append("select acc from KiteAccountAudit acc");
+		cq.setQueryString(sb.toString());
+		cq.setInParamMap(new HashMap<>());
+		return cq;
+	}
 }

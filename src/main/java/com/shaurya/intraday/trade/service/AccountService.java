@@ -4,6 +4,8 @@
 package com.shaurya.intraday.trade.service;
 
 import com.shaurya.intraday.entity.KiteAccount;
+import com.shaurya.intraday.entity.KiteAccountAudit;
+import java.util.TreeSet;
 
 /**
  * @author Shaurya
@@ -12,7 +14,9 @@ import com.shaurya.intraday.entity.KiteAccount;
 public interface AccountService {
 	public KiteAccount getAccount();
 
-  void updateFundBalance(Integer totalFund);
+  void updateFundBalance(Long totalFund);
 
-  Integer getFund();
+  Long getFund();
+
+  TreeSet<KiteAccountAudit> getAllAuditData();
 }

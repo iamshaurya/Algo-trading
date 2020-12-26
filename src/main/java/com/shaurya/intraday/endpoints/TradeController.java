@@ -4,6 +4,7 @@
 package com.shaurya.intraday.endpoints;
 
 import com.shaurya.intraday.constant.Constants;
+import com.shaurya.intraday.entity.KiteAccountAudit;
 import com.shaurya.intraday.enums.IntervalType;
 import com.shaurya.intraday.enums.StrategyType;
 import com.shaurya.intraday.model.Candle;
@@ -12,6 +13,7 @@ import com.shaurya.intraday.model.StockBeta;
 import com.shaurya.intraday.model.StrategyModel;
 import com.shaurya.intraday.trade.backtest.service.BackTestService;
 import com.shaurya.intraday.trade.backtest.service.BackTestServiceV2;
+import com.shaurya.intraday.trade.service.AccountService;
 import com.shaurya.intraday.trade.service.SetupServiceImpl;
 import com.shaurya.intraday.trade.service.TradeService;
 import com.shaurya.intraday.util.HttpClientService;
@@ -65,6 +67,8 @@ import org.springframework.web.multipart.MultipartFile;
 public class TradeController {
 
   private static final String volatility_sdf = "ddMMyyyy";
+  @Autowired
+  private AccountService accountService;
   @Autowired
   private BackTestServiceV2 backTestServiceV2;
   @Autowired
@@ -211,6 +215,35 @@ public class TradeController {
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
     Date date = sdf.parse(dateStr);
     return new ResponseEntity<>(holidays.contains(date), HttpStatus.OK);
+  }
+
+  @RequestMapping(value = "/maxDrawDown", method = RequestMethod.GET)
+  public ResponseEntity<Double> getMaxDrawdown()
+      throws ParseException {
+    TreeSet<KiteAccountAudit> auditData = this.accountService.getAllAuditData();
+    return new ResponseEntity<Double>(getMaxDrawDown(auditData), HttpStatus.OK);
+  }
+
+  private Double getMaxDrawDown(TreeSet<KiteAccountAudit> auditData) {
+    KiteAccountAudit auditHigh = auditData.first();
+    KiteAccountAudit auditLow = auditData.first();
+    Double maxDrawdown = 0.0;
+    for (KiteAccountAudit audit : auditData) {
+      if (audit.getFund() > auditHigh.getFund()) {
+        auditHigh = audit;
+        auditLow = audit;
+      }
+      if (audit.getFund() < auditLow.getFund()) {
+        auditLow = audit;
+      }
+
+      if (auditLow.getId() > auditHigh.getId()) {
+        Double drawdown =
+            ((double) (auditHigh.getFund() - auditLow.getFund()) / auditHigh.getFund()) * 100;
+        maxDrawdown = Math.max(drawdown, maxDrawdown);
+      }
+    }
+    return maxDrawdown;
   }
 
   private List<StockBeta> getTodaysVolatileStocks() throws IOException {

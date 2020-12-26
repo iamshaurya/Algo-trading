@@ -34,6 +34,6 @@ public class KiteAccount {
   @Column(name = "user_id")
   private String userId;
   @Column(name = "fund")
-  private Integer fund;
+  private Long fund;
 
 }

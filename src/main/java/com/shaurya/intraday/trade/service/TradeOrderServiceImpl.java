@@ -204,7 +204,7 @@ public class TradeOrderServiceImpl implements TradeOrderService {
 
   //take max 1% risk per trade
   @Override
-  public Integer getQuantityAsPerRisk(final Integer equity, final Double slPoints,
+  public Integer getQuantityAsPerRisk(final Long equity, final Double slPoints,
       final Integer lotSize,
       final Double riskPerTradePer) {
     Double riskPerTrade = riskPerTradePer * equity;

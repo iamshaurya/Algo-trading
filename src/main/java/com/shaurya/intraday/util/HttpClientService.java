@@ -81,7 +81,7 @@ public class HttpClientService {
       url = url + "?" + queryString;
     }
     final HttpGet get = new HttpGet(url);
-    get.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
+    //get.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
     for (final Entry<String, String> head : headers.entrySet()) {
       get.setHeader(head.getKey(), head.getValue());
     }

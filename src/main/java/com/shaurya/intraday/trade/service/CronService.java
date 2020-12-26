@@ -35,7 +35,7 @@ public class CronService {
 		HttpClientService.executeGetRequest("http://127.0.0.1:9080/trade/v1/startup/login", new ArrayList<NameValuePair>());
 	}
 
-	@Scheduled(cron = "0 55 8 * * MON-FRI")
+	@Scheduled(cron = "0 10 9 * * MON-FRI")
 	public void startup() {
     if (isTodayHoliday()) {
       return;

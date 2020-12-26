@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -527,7 +528,7 @@ public class TradeServiceImpl implements TradeService {
         .runNativeQuery(TradeQueryBuilder.nativeQueryToFetchHolidays());
     if (holidayList != null && !holidayList.isEmpty()) {
       for (Object nt : holidayList) {
-        holidays.add(new Date(((Timestamp)nt).getTime()));
+        holidays.add(new Date(((Timestamp) nt).getTime()));
       }
     }
     return holidays;
@@ -572,6 +573,25 @@ public class TradeServiceImpl implements TradeService {
   public void updateTradeStocks(Long eligibleStock, Double atr, Double marginPortion) {
     strategyRepo.runNativeQueryForUpdate(
         TradeQueryBuilder.queryToUpdateTradeStock(eligibleStock, atr, marginPortion));
+  }
+
+  @Override
+  public void updateTradeStocks(List<String> securityNames) {
+    for (String s : securityNames) {
+      strategyRepo.runNativeQueryForUpdate(TradeQueryBuilder.queryToUpdateTradeStock(s));
+    }
+  }
+
+  @Override
+  public void updateStockBetaValue(String securityName, Double atr) {
+    List<TradeStrategy> strategies = strategyRepo
+        .fetchByQuery(TradeQueryBuilder.queryToFetchSecurityByName(securityName));
+    if (CollectionUtils.isEmpty(strategies)) {
+      System.out.println("No entry found for " + securityName);
+      return;
+    }
+    strategyRepo.runNativeQueryForUpdate(
+        TradeQueryBuilder.queryToUpdateStockBeta(securityName, atr));
   }
 
   @Override

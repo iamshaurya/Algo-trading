@@ -70,5 +70,9 @@ public interface TradeService {
 
   void updateTradeStocks(Long eligibleStock, Double atr, Double marginPortion);
 
+  void updateTradeStocks(List<String> securityNames);
+
+  void updateStockBetaValue(String securityName, Double atr);
+
   void updateTrailSlTrade(StrategyModel tradeCall);
 }

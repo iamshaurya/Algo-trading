@@ -24,12 +24,12 @@ public class StockBeta implements Comparable<StockBeta>{
       return false;
     }
     StockBeta stockBeta = (StockBeta) o;
-    return Objects.equals(beta, stockBeta.beta);
+    return Objects.equals(name, stockBeta.name);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(beta);
+    return Objects.hash(name);
   }
 
   @Override

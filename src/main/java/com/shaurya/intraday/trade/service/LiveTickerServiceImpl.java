@@ -115,28 +115,18 @@ public class LiveTickerServiceImpl implements LiveTickerService {
             handleMonitorStock(t);
           }
           if (isPreOpenWindow(t.getTickTimestamp())) {
-            if (tradeStock != null && tradeStock.containsKey(t.getInstrumentToken())) {
-              log.error("In pre open window");
-              Double absPreOpenPer = Math
-                  .abs(((t.getOpenPrice() - t.getClosePrice()) / t.getClosePrice()) * 100);
-              //handle pre open ticks
-              preOpenMap.put(t.getInstrumentToken(), absPreOpenPer);
-            }
+            handlePreOpenSession(t);
           }
         }
-        //sort the pre open data
-        if (isPreOpenWindow(new Date())) {
-          List<PreOpenTick> preOpenTicks = new ArrayList<>();
-          if (preOpenMap != null) {
-            for (Entry<Long, Double> e : preOpenMap.entrySet()) {
-              preOpenTicks.add(new PreOpenTick(e.getValue(), e.getKey()));
-            }
-            Collections.sort(preOpenTicks);
-            for (int i = 0; i < 10; i++) {
-              filteredPreOpenStock.add(preOpenTicks.get(i).getInstrumentToken());
-            }
-          }
-          log.error("Filtered pre open stock {}", JsonParser.objectToJson(filteredPreOpenStock));
+      }
+
+      private void handlePreOpenSession(Tick t) {
+        if (tradeStock != null && tradeStock.containsKey(t.getInstrumentToken())) {
+          log.error("In pre open window for : {}", JsonParser.objectToJson(t));
+          Double absPreOpenPer = Math
+              .abs(((t.getOpenPrice() - t.getClosePrice()) / t.getClosePrice()) * 100);
+          //handle pre open ticks
+          preOpenMap.put(t.getInstrumentToken(), absPreOpenPer);
         }
       }
 
@@ -275,6 +265,28 @@ public class LiveTickerServiceImpl implements LiveTickerService {
     nameTokenMap = null;
     preOpenMap = null;
     filteredPreOpenStock = null;
+  }
+
+  @Override
+  public void filterPreOpenStock() {
+    //sort and pick stock based on the pre open data
+    List<PreOpenTick> preOpenTicks = new ArrayList<>();
+    if (!CollectionUtils.isEmpty(preOpenMap)) {
+      for (Entry<Long, Double> e : preOpenMap.entrySet()) {
+        preOpenTicks.add(new PreOpenTick(e.getValue(), e.getKey()));
+      }
+      Collections.sort(preOpenTicks);
+      if (preOpenTicks.size() >= 10) {
+        filteredPreOpenStock.clear();
+        for (int i = 0; i < 10; i++) {
+          filteredPreOpenStock.add(preOpenTicks.get(i).getInstrumentToken());
+        }
+        log.error("Filtered pre open stock :");
+        for (Long l : filteredPreOpenStock) {
+          log.error("Stock name {}", nameTokenMap.get(l));
+        }
+      }
+    }
   }
 
 }

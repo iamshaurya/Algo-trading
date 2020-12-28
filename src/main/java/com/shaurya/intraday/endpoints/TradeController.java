@@ -12,6 +12,7 @@ import com.shaurya.intraday.model.PreOpenResponse;
 import com.shaurya.intraday.model.PreOpenResponse.StockPreOpen;
 import com.shaurya.intraday.model.StockBeta;
 import com.shaurya.intraday.model.StrategyModel;
+import com.shaurya.intraday.trade.service.LiveTickerService;
 import com.shaurya.intraday.trade.service.SetupServiceImpl;
 import com.shaurya.intraday.trade.service.TradeService;
 import com.shaurya.intraday.util.HttpClientService;
@@ -70,6 +71,8 @@ public class TradeController {
   private static final String volatility_sdf = "ddMMyyyy";
 
   @Autowired
+  private LiveTickerService liveTickerService;
+  @Autowired
   private SetupServiceImpl setupService;
   @Autowired
   private TradeService tradeService;
@@ -93,11 +96,8 @@ public class TradeController {
   @RequestMapping(value = "/startup", method = RequestMethod.GET)
   public ResponseEntity<Boolean> startUp() {
     try {
-      List<String> filteredStock = getTopPreopenStock();
-      log.error("pre open filtered stocks {}", filteredStock);
-      tradeService.updateTradeStocks(filteredStock);
-      setupService.startup();
-    } catch (KiteException | IOException | JSONException e) {
+      liveTickerService.filterPreOpenStock();
+    } catch (Exception e) {
       String reason = "startup failed by cron because :: " + e.getCause();
       log.error("startup failed {}", reason);
       MailSender.sendMail(Constants.TO_MAIL, Constants.TO_NAME, Constants.STARTUP_FALIED, reason,

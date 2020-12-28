@@ -26,4 +26,6 @@ public interface LiveTickerService {
 	public void subscribeTradeStock(ArrayList<Long> tokens);
 
 	public void subscribeMonitorStock(ArrayList<Long> tokens);
+
+  void filterPreOpenStock();
 }

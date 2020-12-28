@@ -151,6 +151,14 @@ public class HelperUtil {
     return tick.after(openTime) && tick.before(closeTime);
   }
 
+  public static boolean isPreOpenWindow(Date tickTimestamp) {
+    Calendar openTime = getDayStartTime();
+    Calendar tick = Calendar.getInstance();
+    tick.setTime(tickTimestamp);
+
+    return tick.before(openTime);
+  }
+
   public static Calendar getDayEndTime() {
     Calendar closeTime = Calendar.getInstance();
     closeTime.set(Calendar.HOUR_OF_DAY, 15);

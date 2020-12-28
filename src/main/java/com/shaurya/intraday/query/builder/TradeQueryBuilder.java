@@ -146,7 +146,7 @@ public class TradeQueryBuilder {
     CustomQueryHolder cq = new CustomQueryHolder();
     StringBuilder sb = new StringBuilder();
     sb.append(
-        "update trade_strategy set atr = " + atr + " where security_name = '" + securityName + "'");
+        "update trade_strategy set day = 2 , atr = " + atr + " where security_name = '" + securityName + "'");
     cq.setQueryString(sb.toString());
     cq.setInParamMap(new HashMap<>());
     return cq;

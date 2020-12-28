@@ -4,6 +4,7 @@
 package com.shaurya.intraday.trade.service;
 
 import static com.shaurya.intraday.util.HelperUtil.isBetweenTradingWindow;
+import static com.shaurya.intraday.util.HelperUtil.isPreOpenWindow;
 import static com.shaurya.intraday.util.HelperUtil.isTimeDiff1Min;
 
 import java.util.ArrayList;
@@ -39,6 +40,7 @@ public class LiveTickerServiceImpl implements LiveTickerService {
   private Map<Long, LiveTickCandle> tradeStock;
   private Map<Long, LiveTickCandle> monitorStock;
   private Map<Long, String> nameTokenMap;
+  private  Map<Long, Double> preOpenMap;
   @Autowired
   private TradeProcessor tradeProcessor;
   @Autowired
@@ -102,6 +104,9 @@ public class LiveTickerServiceImpl implements LiveTickerService {
           if (isBetweenTradingWindow(t.getTickTimestamp())) {
             handleTradeStock(t);
             handleMonitorStock(t);
+          }
+          if (isPreOpenWindow(t.getTickTimestamp())) {
+            //handle pre open ticks
           }
         }
       }
@@ -206,6 +211,7 @@ public class LiveTickerServiceImpl implements LiveTickerService {
   @Override
   public void subscribeTradeStock(ArrayList<Long> tokens) {
     log.error("subscribing for trade :: " + tokens.toString());
+    preOpenMap = new HashMap<>();
     tradeStock = new HashMap<Long, LiveTickCandle>();
     for (Long t : tokens) {
       tradeStock.put(t,
@@ -237,6 +243,7 @@ public class LiveTickerServiceImpl implements LiveTickerService {
     tradeStock = null;
     monitorStock = null;
     nameTokenMap = null;
+    preOpenMap = null;
   }
 
 }

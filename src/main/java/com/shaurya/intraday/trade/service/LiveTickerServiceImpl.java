@@ -7,12 +7,18 @@ import static com.shaurya.intraday.util.HelperUtil.isBetweenTradingWindow;
 import static com.shaurya.intraday.util.HelperUtil.isPreOpenWindow;
 import static com.shaurya.intraday.util.HelperUtil.isTimeDiff1Min;
 
+import com.shaurya.intraday.model.PreOpenTick;
+import com.shaurya.intraday.util.JsonParser;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,6 +33,7 @@ import com.zerodhatech.ticker.OnConnect;
 import com.zerodhatech.ticker.OnDisconnect;
 import com.zerodhatech.ticker.OnError;
 import com.zerodhatech.ticker.OnTicks;
+import org.springframework.util.CollectionUtils;
 
 /**
  * @author Shaurya
@@ -40,7 +47,8 @@ public class LiveTickerServiceImpl implements LiveTickerService {
   private Map<Long, LiveTickCandle> tradeStock;
   private Map<Long, LiveTickCandle> monitorStock;
   private Map<Long, String> nameTokenMap;
-  private  Map<Long, Double> preOpenMap;
+  private Map<Long, Double> preOpenMap;
+  private Set<Long> filteredPreOpenStock;
   @Autowired
   private TradeProcessor tradeProcessor;
   @Autowired
@@ -75,7 +83,7 @@ public class LiveTickerServiceImpl implements LiveTickerService {
           }
           //tradeTokens.add(256265l); // adding nifty 50 token
           tickerProvider.subscribe(tradeTokens);
-          tickerProvider.setMode(tradeTokens, KiteTicker.modeLTP);
+          tickerProvider.setMode(tradeTokens, KiteTicker.modeQuote);
         }
 
         if (monitorStock != null && !monitorStock.isEmpty()) {
@@ -84,7 +92,7 @@ public class LiveTickerServiceImpl implements LiveTickerService {
             monitorTokens.add(e.getKey());
           }
           tickerProvider.subscribe(monitorTokens);
-          tickerProvider.setMode(monitorTokens, KiteTicker.modeLTP);
+          tickerProvider.setMode(monitorTokens, KiteTicker.modeQuote);
         }
       }
     });
@@ -101,13 +109,34 @@ public class LiveTickerServiceImpl implements LiveTickerService {
       public void onTicks(ArrayList<Tick> ticks) {
         for (Tick t : ticks) {
           t.setTickTimestamp(new Date());
-          if (isBetweenTradingWindow(t.getTickTimestamp())) {
+          if (isBetweenTradingWindow(t.getTickTimestamp()) && filteredPreOpenStock
+              .contains(t.getInstrumentToken())) {
             handleTradeStock(t);
             handleMonitorStock(t);
           }
           if (isPreOpenWindow(t.getTickTimestamp())) {
-            //handle pre open ticks
+            if (tradeStock != null && tradeStock.containsKey(t.getInstrumentToken())) {
+              log.error("In pre open window");
+              Double absPreOpenPer = Math
+                  .abs(((t.getOpenPrice() - t.getClosePrice()) / t.getClosePrice()) * 100);
+              //handle pre open ticks
+              preOpenMap.put(t.getInstrumentToken(), absPreOpenPer);
+            }
           }
+        }
+        //sort the pre open data
+        if (isPreOpenWindow(new Date())) {
+          List<PreOpenTick> preOpenTicks = new ArrayList<>();
+          if (preOpenMap != null) {
+            for (Entry<Long, Double> e : preOpenMap.entrySet()) {
+              preOpenTicks.add(new PreOpenTick(e.getValue(), e.getKey()));
+            }
+            Collections.sort(preOpenTicks);
+            for (int i = 0; i < 10; i++) {
+              filteredPreOpenStock.add(preOpenTicks.get(i).getInstrumentToken());
+            }
+          }
+          log.error("Filtered pre open stock {}", JsonParser.objectToJson(filteredPreOpenStock));
         }
       }
 
@@ -212,6 +241,7 @@ public class LiveTickerServiceImpl implements LiveTickerService {
   public void subscribeTradeStock(ArrayList<Long> tokens) {
     log.error("subscribing for trade :: " + tokens.toString());
     preOpenMap = new HashMap<>();
+    filteredPreOpenStock = new HashSet<>();
     tradeStock = new HashMap<Long, LiveTickCandle>();
     for (Long t : tokens) {
       tradeStock.put(t,
@@ -244,6 +274,7 @@ public class LiveTickerServiceImpl implements LiveTickerService {
     monitorStock = null;
     nameTokenMap = null;
     preOpenMap = null;
+    filteredPreOpenStock = null;
   }
 
 }

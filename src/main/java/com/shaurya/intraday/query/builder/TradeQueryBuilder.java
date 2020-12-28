@@ -102,7 +102,7 @@ public class TradeQueryBuilder {
   public static CustomQueryHolder queryToUpdateAllStockToMonitorStock() {
     CustomQueryHolder cq = new CustomQueryHolder();
     StringBuilder sb = new StringBuilder();
-    sb.append("update trade_strategy set day = 1");
+    sb.append("update trade_strategy set day = 1 and atr = 0.0");
     cq.setQueryString(sb.toString());
     cq.setInParamMap(new HashMap<>());
     return cq;

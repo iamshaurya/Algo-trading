@@ -224,7 +224,7 @@ public class LiveTickerServiceImpl implements LiveTickerService {
   public void subscribe(ArrayList<Long> tokens) {
     log.error("subscribing for :: " + tokens.toString());
     tickerProvider.subscribe(tokens);
-    tickerProvider.setMode(tokens, KiteTicker.modeLTP);
+    tickerProvider.setMode(tokens, KiteTicker.modeQuote);
   }
 
   @Override
@@ -239,7 +239,7 @@ public class LiveTickerServiceImpl implements LiveTickerService {
     }
     //tokens.add(256265l); // adding nifty 50 token
     tickerProvider.subscribe(tokens);
-    tickerProvider.setMode(tokens, KiteTicker.modeLTP);
+    tickerProvider.setMode(tokens, KiteTicker.modeQuote);
   }
 
   @Override
@@ -251,7 +251,7 @@ public class LiveTickerServiceImpl implements LiveTickerService {
           new LiveTickCandle(0, nameTokenMap.get(t), t, HelperUtil.getNoonTime().getTime()));
     }
     tickerProvider.subscribe(tokens);
-    tickerProvider.setMode(tokens, KiteTicker.modeLTP);
+    tickerProvider.setMode(tokens, KiteTicker.modeQuote);
   }
 
   @Override
@@ -283,7 +283,7 @@ public class LiveTickerServiceImpl implements LiveTickerService {
         }
         log.error("Filtered pre open stock :");
         for (Long l : filteredPreOpenStock) {
-          log.error("Stock name {}", nameTokenMap.get(l));
+          log.error("Stock name {} , pre open value {}", nameTokenMap.get(l), preOpenMap.get(l));
         }
       }
     }

@@ -123,8 +123,7 @@ public class LiveTickerServiceImpl implements LiveTickerService {
       private void handlePreOpenSession(Tick t) {
         if (tradeStock != null && tradeStock.containsKey(t.getInstrumentToken())) {
           log.error("In pre open window for : {}", JsonParser.objectToJson(t));
-          Double absPreOpenPer = Math
-              .abs(((t.getOpenPrice() - t.getClosePrice()) / t.getClosePrice()) * 100);
+          Double absPreOpenPer = Math.abs(t.getChange());
           //handle pre open ticks
           preOpenMap.put(t.getInstrumentToken(), absPreOpenPer);
         }

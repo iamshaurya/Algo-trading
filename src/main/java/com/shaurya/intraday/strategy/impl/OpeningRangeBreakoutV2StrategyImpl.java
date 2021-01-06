@@ -1,11 +1,13 @@
 package com.shaurya.intraday.strategy.impl;
 
+import static com.shaurya.intraday.util.HelperUtil.closingBasedStopLossReached;
 import static com.shaurya.intraday.util.HelperUtil.stopLossReached;
 
 import com.shaurya.intraday.enums.PositionType;
 import com.shaurya.intraday.model.Candle;
 import com.shaurya.intraday.model.StrategyModel;
 import com.shaurya.intraday.strategy.OpeningRangeBreakoutV2Strategy;
+import com.shaurya.intraday.util.CandlestickPatternHelper;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Iterator;
@@ -15,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class OpeningRangeBreakoutV2StrategyImpl implements OpeningRangeBreakoutV2Strategy {
+
   private static final double rangePercentage = 0.0085;
   private double deviationPercentage;
   private Double high;
@@ -116,7 +119,7 @@ public class OpeningRangeBreakoutV2StrategyImpl implements OpeningRangeBreakoutV
     log.error("current close {}", candle.getClose());
     StrategyModel tradeCall = null;
     if (openTrade == null) {
-      if (candle.getClose() > high && permisibleRange()) {
+      if ((candle.getClose() > high && permisibleRange())) {
         double longSl = (candle.getClose() - low);
         tradeCall = new StrategyModel(candle.getToken(), PositionType.LONG, longSl,
             candle.getClose(),
@@ -132,7 +135,7 @@ public class OpeningRangeBreakoutV2StrategyImpl implements OpeningRangeBreakoutV
           minAuxLow = Double.MAX_VALUE;
         }
       }
-      if (candle.getClose() < low && permisibleRange()) {
+      if ((candle.getClose() < low && permisibleRange())) {
         double shortSl = (high - candle.getClose());
         tradeCall = new StrategyModel(candle.getToken(), PositionType.SHORT, shortSl,
             candle.getClose(),
@@ -201,6 +204,22 @@ public class OpeningRangeBreakoutV2StrategyImpl implements OpeningRangeBreakoutV
     return true;
   }
 
+  private boolean isStrongGapUp() {
+    /*return (firstRangeCandle.getClose() > firstRangeCandle.getOpen()) && (
+        Math.abs(firstRangeCandle.getClose() - firstRangeCandle.getOpen()) >= 0.7 * (
+            firstRangeCandle.getHigh() - firstRangeCandle.getLow()));*/
+    return (firstRangeCandle.getClose() > firstRangeCandle.getOpen()) && CandlestickPatternHelper
+        .strongBullish(firstRangeCandle);
+  }
+
+  private boolean isStrongGapDown() {
+    /*return (firstRangeCandle.getClose() < firstRangeCandle.getOpen()) && (
+        Math.abs(firstRangeCandle.getClose() - firstRangeCandle.getOpen()) >= 0.7 * (
+            firstRangeCandle.getHigh() - firstRangeCandle.getLow()));*/
+    return (firstRangeCandle.getClose() < firstRangeCandle.getOpen()) && CandlestickPatternHelper
+        .strongBearish(firstRangeCandle);
+  }
+
   @Override
   public void initializeSetup(List<Candle> cList) {
     rangeCandleSet = new TreeSet<>();
@@ -213,9 +232,10 @@ public class OpeningRangeBreakoutV2StrategyImpl implements OpeningRangeBreakoutV
   // deviation range atr/5
   @Override
   public void setDeviationPercentage(double deviationPercentage) {
-    this.deviationPercentage = BigDecimal
+    /*this.deviationPercentage = BigDecimal
         .valueOf(deviationPercentage).divide(BigDecimal.valueOf(500))
-        .doubleValue();
+        .doubleValue();*/
+    this.deviationPercentage = 0.005;
   }
 
   @Override

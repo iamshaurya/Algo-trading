@@ -30,6 +30,19 @@ public class TradeQueryBuilder {
 		return cq;
 	}
 
+	public static CustomQueryHolder queryToFetchLatestBySecurityName(String securityName) {
+		CustomQueryHolder cq = new CustomQueryHolder();
+		StringBuilder sb = new StringBuilder();
+		sb.append(
+				"select trade from Trade trade where trade.securityName = :securityName");
+		sb.append(" order by trade.tradeDate desc");
+		Map<String, Object> inParamMap = new HashMap<>();
+		inParamMap.put("securityName", securityName);
+		cq.setInParamMap(inParamMap);
+		cq.setQueryString(sb.toString());
+		return cq;
+	}
+
 	public static CustomQueryHolder queryToFetchSecurityTradeStrategy() {
 		CustomQueryHolder cq = new CustomQueryHolder();
 		StringBuilder sb = new StringBuilder();

@@ -6,12 +6,17 @@ package com.shaurya.intraday.trade.backtest.service;
 import static com.shaurya.intraday.util.HelperUtil.isIntradayClosingTime;
 
 import com.shaurya.intraday.constant.Constants;
+import com.shaurya.intraday.entity.Performance;
+import com.shaurya.intraday.entity.Trade;
 import com.shaurya.intraday.enums.PositionType;
 import com.shaurya.intraday.enums.StrategyType;
 import com.shaurya.intraday.enums.TradeExitReason;
 import com.shaurya.intraday.model.Candle;
 import com.shaurya.intraday.model.MailAccount;
+import com.shaurya.intraday.model.PreOpenModel;
 import com.shaurya.intraday.model.StrategyModel;
+import com.shaurya.intraday.query.builder.TradeQueryBuilder;
+import com.shaurya.intraday.repo.JpaRepo;
 import com.shaurya.intraday.strategy.OpenHighLowStrategy;
 import com.shaurya.intraday.strategy.OpeningRangeBreakoutStrategy;
 import com.shaurya.intraday.strategy.OpeningRangeBreakoutV2Strategy;
@@ -20,6 +25,7 @@ import com.shaurya.intraday.strategy.SuperTrendStrategy;
 import com.shaurya.intraday.strategy.impl.OpenHighLowStrategyImpl;
 import com.shaurya.intraday.strategy.impl.OpeningRangeBreakoutStrategyImpl;
 import com.shaurya.intraday.strategy.impl.OpeningRangeBreakoutV2StrategyImpl;
+import com.shaurya.intraday.strategy.impl.PreOpenStrategyImpl;
 import com.shaurya.intraday.strategy.impl.SuperTrendStrategyImpl;
 import com.shaurya.intraday.trade.service.AccountService;
 import com.shaurya.intraday.trade.service.TradeService;
@@ -28,7 +34,10 @@ import com.shaurya.intraday.util.MailSender;
 import com.shaurya.intraday.util.StringUtil;
 import com.zerodhatech.kiteconnect.kitehttp.exceptions.KiteException;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -40,6 +49,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 /**
  * @author Shaurya
@@ -58,6 +68,10 @@ public class TradeBacktestProcessorImpl implements TradeBacktestProcessor {
   private MailAccount mailAccount;
   @Autowired
   private AccountService accountService;
+  @Autowired
+  private JpaRepo<Performance> performanceRepo;
+  @Autowired
+  private JpaRepo<Trade> tradeJpaRepo;
 
   @Override
   public StrategyModel getTradeCall(Candle candle) {
@@ -73,14 +87,22 @@ public class TradeBacktestProcessorImpl implements TradeBacktestProcessor {
         // square off all position
         if (openTrade != null) {
           openTrade.setTradePrice(candle.getClose());
-          tradeService.closeTrade(openTrade, TradeExitReason.CLOSING_TIME);
+          if (HelperUtil.stopLossReached(candle, openTrade)) {
+            tradeService.closeTrade(openTrade, TradeExitReason.HARD_STOP_LOSS_HIT);
+          } else {
+            tradeService.closeTrade(openTrade, TradeExitReason.CLOSING_TIME);
+          }
         }
       } else {
         if (tradeCall != null) {
           if (tradeCall.isExitOrder()) {
             TradeExitReason reason = null;
             reason = TradeExitReason.HARD_STOP_LOSS_HIT;
+            openTrade.setTradePrice(candle.getClose());
             tradeService.closeTrade(tradeCall, reason);
+            /*List<Trade> tradeList = tradeJpaRepo.findByQuery(
+                TradeQueryBuilder.queryToFetchLatestBySecurityName(openTrade.getSecurity()));
+            updatePerformance(Arrays.asList(tradeList.get(0)));*/
             tradeCall =
                 (tradeCall = strategyMap.get(candle.getSecurity()).processTrades(candle, null,
                     false)) != null ? tradeCall : null;
@@ -199,6 +221,85 @@ public class TradeBacktestProcessorImpl implements TradeBacktestProcessor {
     return isPreferedPosition;
   }
 
+  private void updatePerformance(List<Trade> trades) throws IOException, KiteException {
+    List<Performance> performanceList = performanceRepo
+        .fetchByQuery(TradeQueryBuilder.queryToPerformance());
+    if (!CollectionUtils.isEmpty(performanceList) && !CollectionUtils.isEmpty(trades)) {
+      Performance performance = performanceList.get(0);
+      int totalWinToday = 0;
+      int totalLossToday = 0;
+      double totalWinR = 0;
+      double totalLossR = 0;
+      double todayWinR = 0;
+      double todayLossR = 0;
+      double buyTradeAmount = 0;
+      double sellTradeAmount = 0;
+      double pl = 0;
+      for (Trade t : trades) {
+        buyTradeAmount += t.getTradeEntryPrice() * t.getQuantity();
+        sellTradeAmount += t.getTradeExitPrice() * t.getQuantity();
+        pl += t.getPl();
+        if (t.getPl() > 0) {
+          todayWinR += t.getRiskToReward();
+          totalWinR += t.getRiskToReward();
+          totalWinToday++;
+        } else {
+          todayLossR += t.getRiskToReward();
+          totalLossR += t.getRiskToReward();
+          totalLossToday++;
+        }
+      }
+
+      double brokerageAndSlippage = brokerageChargeAndSlippage(buyTradeAmount, sellTradeAmount);
+      Double currentEquity = accountService.getFund() + pl;
+      currentEquity = currentEquity - brokerageAndSlippage;
+      Double returnPer =
+          ((currentEquity - performance.getStartingCapital()) / performance.getStartingCapital())
+              * 100;
+      performance.setCurrentCapital(currentEquity);
+      performance.setReturnPercentage(returnPer);
+      performance.setTotalWinningTrade(performance.getTotalWinningTrade() + totalWinToday);
+      performance.setTotalWinningR(performance.getTotalWinningR() + totalWinR);
+      performance
+          .setAvgWinningR(performance.getTotalWinningTrade() == 0 ? 0
+              : performance.getTotalWinningR() / performance.getTotalWinningTrade());
+      performance.setTotalLosingTrade(performance.getTotalLosingTrade() + totalLossToday);
+      performance.setTotalLosingR(performance.getTotalLosingR() + (totalLossR * -1));
+      performance.setAvgLosingR(performance.getTotalLosingTrade() == 0 ? 0
+          : performance.getTotalLosingR() / performance.getTotalLosingTrade());
+      Double winRate =
+          ((double) performance.getTotalWinningTrade() / (performance.getTotalWinningTrade()
+              + performance.getTotalLosingTrade())) * 100;
+      performance.setWinRate(winRate);
+      Double edge = (performance.getWinRate() * performance.getAvgWinningR()) - (
+          (100 - performance.getWinRate()) * performance.getAvgLosingR());
+      edge = BigDecimal
+          .valueOf(edge)
+          .setScale(2, RoundingMode.HALF_UP).doubleValue();
+      performance.setEdge(edge);
+      //TODO: need to check how to calculate max drawdown
+      //performance.setSharpeRatio();
+      //performance.setMaxDrawDown();
+
+      performanceRepo.update(performance);
+      this.accountService.updateFundBalance(currentEquity.longValue());
+    }
+  }
+
+  private double brokerageChargeAndSlippage(double buyTradePrice, double sellTradePrice) {
+    double turnover = (buyTradePrice + sellTradePrice);
+    double brokerage =
+        Math.min((buyTradePrice * 0.0003), 20) + Math.min((sellTradePrice * 0.0003), 20);
+    double stt = 0.0001 * (sellTradePrice);
+    double transactionCharge = (0.000019 * buyTradePrice) + (0.000019 * sellTradePrice);
+    double gst = 0.18 * (transactionCharge + brokerage);
+    double sebiCharge = (0.0000015 * buyTradePrice) + (0.0000015 * sellTradePrice);
+    double stampCharge = (0.00002 * buyTradePrice) + (0.00002 * sellTradePrice);
+
+    double brokerageCharge = brokerage + stt + transactionCharge + gst + sebiCharge + stampCharge;
+    return 1.5 * brokerageCharge;
+  }
+
 
   @Override
   public void initializeStrategyMap(Date date) throws IOException, KiteException, JSONException {
@@ -254,6 +355,12 @@ public class TradeBacktestProcessorImpl implements TradeBacktestProcessor {
             SuperTrendStrategy superTrendStrategy = new SuperTrendStrategyImpl();
             superTrendStrategy.initializeSetup(new ArrayList<>(candleTreeSet));
             strategyMap.put(e.getKey().getSecurity(), superTrendStrategy);
+          case PRE_OPEN_GAPPER:
+            cList = new ArrayList<>();
+            PreOpenStrategyImpl preOpenStrategy = new PreOpenStrategyImpl();
+            preOpenStrategy.initializeSetup(cList);
+            strategyMap.put(e.getKey().getSecurity(), preOpenStrategy);
+            break;
           default:
             break;
         }
@@ -275,6 +382,13 @@ public class TradeBacktestProcessorImpl implements TradeBacktestProcessor {
     cal.set(Calendar.SECOND, 0);
     cal.set(Calendar.MILLISECOND, 0);
     first15MinTime = cal;
+  }
+
+  @Override
+  public void updateStrategyMap(String stock, Double maxRange) {
+    OpeningRangeBreakoutStrategyImpl openingRangeBreakoutStrategy = (OpeningRangeBreakoutStrategyImpl) strategyMap
+        .get(stock);
+    openingRangeBreakoutStrategy.updateMaxRange(maxRange);
   }
 
   private void fetchCandlesForAtr(String stock, Date date, TreeSet<Candle> candles)

@@ -14,7 +14,7 @@ public class StockBeta implements Comparable<StockBeta>{
 
   private Double beta;
   private String name;
-  private Double cprWidth;
+  private PreOpenModel preOpenModel;
 
   @Override
   public boolean equals(Object o) {
@@ -25,12 +25,12 @@ public class StockBeta implements Comparable<StockBeta>{
       return false;
     }
     StockBeta stockBeta = (StockBeta) o;
-    return Objects.equals(cprWidth, stockBeta.cprWidth);
+    return Objects.equals(beta, stockBeta.beta);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(cprWidth);
+    return Objects.hash(beta);
   }
 
   @Override

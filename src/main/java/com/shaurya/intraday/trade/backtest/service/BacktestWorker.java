@@ -13,12 +13,14 @@ public class BacktestWorker implements Runnable {
   private final ArrayBlockingQueue<String> queue;
   private final TradeBacktestProcessor tradeBacktestProcessor;
   private final Date tradeDate;
+  private final Date lastTradingDate;
 
   public BacktestWorker(ArrayBlockingQueue<String> queue,
-      TradeBacktestProcessor tradeBacktestProcessor, Date date) {
+      TradeBacktestProcessor tradeBacktestProcessor, Date tradeDate, Date lastTradingDate) {
     this.queue = queue;
     this.tradeBacktestProcessor = tradeBacktestProcessor;
-    this.tradeDate = date;
+    this.tradeDate = tradeDate;
+    this.lastTradingDate = lastTradingDate;
   }
 
 
@@ -28,13 +30,13 @@ public class BacktestWorker implements Runnable {
 
       try {
         String entity = queue.poll();
-        TreeSet<Candle> ticker = null;
-        ticker = TickerGenerator.generateTicker(this.tradeDate, entity);
+        TreeSet<Candle> ticker = TickerGenerator.generateTicker(this.tradeDate, entity);
         for (Candle c : ticker) {
           tradeBacktestProcessor.getTradeCall(c);
         }
       } catch (IOException e) {
-        System.out.println("error in permoring backtest " + StringUtil.getStackTraceInStringFmt(e));
+        System.out
+            .println("error in performing backtest " + StringUtil.getStackTraceInStringFmt(e));
       }
 
     }

@@ -1,40 +1,31 @@
-/**
- *
- */
 package com.shaurya.intraday.strategy.impl;
 
 import static com.shaurya.intraday.util.HelperUtil.stopLossReached;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.TreeSet;
-
 import com.shaurya.intraday.enums.PositionType;
 import com.shaurya.intraday.model.Candle;
 import com.shaurya.intraday.model.StrategyModel;
-import com.shaurya.intraday.strategy.OpeningRangeBreakoutStrategy;
+import com.shaurya.intraday.strategy.PreOpenStrategy;
+import com.shaurya.intraday.util.CandlestickPatternHelper;
+import java.util.Iterator;
+import java.util.List;
+import java.util.TreeSet;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * @author Shaurya
- *
- */
-@Slf4j
-public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStrategy {
 
-  private final double rangePercentage = 0.0085;
+@Slf4j
+public class PreOpenStrategyImpl implements PreOpenStrategy {
+
   //5 orb min
   //range candle count = n min/5 | 5/5 = 1
   private static final int rangeCandleCount = 1;
   private TreeSet<Candle> rangeCandleSet;
   private TreeSet<Candle> candleSet;
   private Candle firstRangeCandle;
-  private Double high;
-  private Double low;
-  private Double maxRange;
   private Candle prevCandle;
+  private Boolean fullGapUp;
   private int tradeCount = 0;
-  private static final int tradeCountThreshold = 2;
+  private static final int tradeCountThreshold = 1;
 
   /*
    * (non-Javadoc)
@@ -53,14 +44,9 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
           rangeCandleSet.add(candle5min);
           Candle rangeCandle = formRangeCandle();
           firstRangeCandle = firstRangeCandle == null ? rangeCandle : firstRangeCandle;
-        } else {
-          prevCandle = candle5min;
-          return getTradeCall(candle5min, openTrade);
         }
-      }
-    } else {
-      if (firstRangeCandle != null && prevCandle != null) {
-        return getTradeCall(prevCandle, openTrade);
+        return getTradeCall(candle5min, openTrade);
+
       }
     }
     return null;
@@ -107,30 +93,45 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
         }
         i++;
       }
-      high = rangeCandle.getOpen() + maxRange;
-      low = rangeCandle.getOpen() - maxRange;
       rangeCandleSet.clear();
     }
     return rangeCandle;
   }
 
   private StrategyModel getTradeCall(Candle candle, StrategyModel openTrade) {
-    log.error((rangeCandleCount * 5) + "min range high {}, low {}", high,
-        low);
+    log.error((rangeCandleCount * 5) + "min range high {}, low {}", firstRangeCandle.getHigh(),
+        firstRangeCandle.getLow());
     log.error("current close {}", candle.getClose());
     StrategyModel tradeCall = null;
     if (openTrade == null) {
-      if (candle.getClose() > high && tradePermitted()) {
-        double longSl = (candle.getClose() - firstRangeCandle.getLow());
+      if (CandlestickPatternHelper.dojiOrSpininTop(firstRangeCandle)) {
+        return null;
+      }
+      PositionType positionType = null;
+      if (this.fullGapUp) {
+        if (isStrongGapUp()) {
+          positionType = PositionType.LONG;
+        } else {
+          positionType = PositionType.SHORT;
+        }
+      } else {
+        if (isStrongGapDown()) {
+          positionType = PositionType.SHORT;
+        } else {
+          positionType = PositionType.LONG;
+        }
+      }
+      if (PositionType.LONG.equals(positionType) && tradePermitted()) {
+        double longSl = (firstRangeCandle.getClose() - firstRangeCandle.getLow());
         tradeCall = new StrategyModel(candle.getToken(), PositionType.LONG, longSl,
-            candle.getClose(),
+            firstRangeCandle.getClose(),
             candle.getSecurity(), null, 0, false);
         tradeCount++;
       }
-      if (candle.getClose() < low && tradePermitted()) {
+      if (PositionType.SHORT.equals(positionType) && tradePermitted()) {
         double shortSl = (firstRangeCandle.getHigh() - candle.getClose());
         tradeCall = new StrategyModel(candle.getToken(), PositionType.SHORT, shortSl,
-            candle.getClose(),
+            firstRangeCandle.getClose(),
             candle.getSecurity(), null, 0, false);
         tradeCount++;
       }
@@ -151,14 +152,30 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
     return tradeCount < tradeCountThreshold;
   }
 
+  private boolean isStrongGapUp() {
+    /*return (firstRangeCandle.getClose() > firstRangeCandle.getOpen()) && (
+        Math.abs(firstRangeCandle.getClose() - firstRangeCandle.getOpen()) >= 0.7 * (
+            firstRangeCandle.getHigh() - firstRangeCandle.getLow()));*/
+    return (firstRangeCandle.getClose() > firstRangeCandle.getOpen());
+  }
+
+  private boolean isStrongGapDown() {
+    /*return (firstRangeCandle.getClose() < firstRangeCandle.getOpen()) && (
+        Math.abs(firstRangeCandle.getClose() - firstRangeCandle.getOpen()) >= 0.7 * (
+            firstRangeCandle.getHigh() - firstRangeCandle.getLow()));*/
+    return (firstRangeCandle.getClose() < firstRangeCandle.getOpen());
+  }
+
   @Override
   public void initializeSetup(List<Candle> cList) {
     rangeCandleSet = new TreeSet<>();
     candleSet = new TreeSet<>();
     tradeCount = 0;
-    high = 0.0;
-    low = 0.0;
-    maxRange = 0.0;
+  }
+
+  @Override
+  public void setFullGap(Boolean fullGapUp) {
+    this.fullGapUp = fullGapUp;
   }
 
   @Override
@@ -170,9 +187,6 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
     rangeCandleSet = null;
     candleSet = null;
     tradeCount = 0;
-    high = 0.0;
-    low = 0.0;
-    maxRange = 0.0;
   }
 
   @Override
@@ -180,8 +194,4 @@ public class OpeningRangeBreakoutStrategyImpl implements OpeningRangeBreakoutStr
     log.info("updateSetup date :: " + candle.getTime());
   }
 
-  @Override
-  public void updateMaxRange(Double maxRange) {
-    this.maxRange = maxRange;
-  }
 }

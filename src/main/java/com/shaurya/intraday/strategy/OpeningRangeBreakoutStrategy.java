@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package com.shaurya.intraday.strategy;
 
@@ -8,5 +8,7 @@ package com.shaurya.intraday.strategy;
  *
  */
 public interface OpeningRangeBreakoutStrategy extends Strategy {
+
+  public void updateMaxRange(Double maxRange);
 
 }

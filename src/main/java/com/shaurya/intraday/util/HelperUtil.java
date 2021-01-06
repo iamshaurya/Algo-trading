@@ -150,6 +150,21 @@ public class HelperUtil {
     return isStopLossReached;
   }
 
+  public static boolean closingBasedStopLossReached(Candle candle, StrategyModel openTrade) {
+    boolean isStopLossReached = false;
+    switch (openTrade.getPosition()) {
+      case LONG:
+        isStopLossReached = (openTrade.getTradePrice() - openTrade.getSl() >= candle.getClose());
+        break;
+      case SHORT:
+        isStopLossReached = (openTrade.getTradePrice() + openTrade.getSl() <= candle.getClose());
+        break;
+      default:
+        break;
+    }
+    return isStopLossReached;
+  }
+
   public static boolean isTimeAfterNoon(Date date) {
     Calendar noonTime = getNoonTime();
     Calendar cal = Calendar.getInstance();
@@ -225,7 +240,7 @@ public class HelperUtil {
     Calendar closeTime = Calendar.getInstance();
     closeTime.setTime(time);
     closeTime.set(Calendar.HOUR_OF_DAY, 15);
-    closeTime.set(Calendar.MINUTE, 18);
+    closeTime.set(Calendar.MINUTE, 21);
     closeTime.set(Calendar.SECOND, 0);
     closeTime.set(Calendar.MILLISECOND, 0);
     Calendar currTime = Calendar.getInstance();
@@ -295,8 +310,10 @@ public class HelperUtil {
     Candle candleday = null;
     int i = 0;
     Iterator<Candle> cItr = candleSet.iterator();
+    double volume = 0;
     while (cItr.hasNext()) {
       Candle c = cItr.next();
+      volume += c.getVolume();
       if (i == 0) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(c.getTime());
@@ -304,7 +321,7 @@ public class HelperUtil {
         cal.set(Calendar.MINUTE, 0);
         candleday = new Candle(c.getSecurity(), c.getToken(), cal.getTime(), c.getOpen(),
             c.getHigh(),
-            c.getLow(), c.getClose(), 0);
+            c.getLow(), c.getClose(), volume);
       } else {
         candleday.setClose(c.getClose());
         candleday.setHigh(Math.max(candleday.getHigh(), c.getHigh()));
@@ -312,6 +329,7 @@ public class HelperUtil {
       }
       i++;
     }
+    candleday.setVolume(volume);
     candleSet.clear();
     return candleday;
   }
